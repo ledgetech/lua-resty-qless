@@ -39,10 +39,10 @@ end
 
 
 function _M.call(self, ...)
-    local res, err = self.redis:evalsha(self.sha, select(1, ...))
+    local res, err = self.redis:evalsha(self.sha, 0, select(1, ...))
     if not res and err == "NOSCRIPT No matching script. Please use EVAL." then
         self:reload()
-        res, err = self.redis:evalsha(self.sha, select(1, ...))
+        res, err = self.redis:evalsha(self.sha, 0, select(1, ...))
     end
     return res, err
 end

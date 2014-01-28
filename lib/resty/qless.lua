@@ -1,10 +1,12 @@
 local ffi = require "ffi"
 local redis_mod = require "resty.redis"
+local cjson = require "cjson"
 
 local qless_luascript = require "resty.qless.luascript"
-local qless_queues = require "resty.qless.queues"
+local qless_queue = require "resty.qless.queue"
 
 local ngx_now = ngx.now
+local ngx_time = ngx.time
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
 local ngx_ERR = ngx.ERR
@@ -13,6 +15,8 @@ local ffi_cdef = ffi.cdef
 local ffi_new = ffi.new
 local ffi_string = ffi.string
 local C = ffi.C
+local cjson_encode = cjson.encode
+local cjson_decode = cjson.decode
 
 
 ffi_cdef[[
@@ -36,6 +40,57 @@ local function random_hex(len)
     C.ngx_hex_dump(hex, bytes, len)
     return ffi_string(hex, len * 2)
 end
+
+
+
+-- Workers, to be accessed via qless.workers.
+local _workers = {}
+
+function _workers._new(client)
+    return setmetatable({ 
+        client = client 
+    }, {
+        __index = function(t, k)
+            if _workers[k] then
+                return _workers[k]
+            else
+                return t.client:call("workers", k)
+            end
+        end,
+    })
+end
+
+function _workers.counts(self)
+    local res = self.client:call("workers") 
+    return cjson_decode(res)
+end
+
+
+
+-- Queues, to be accessed via qless.queues etc.
+local _queues = {}
+
+function _queues._new(client)
+    return setmetatable({ 
+        client = client 
+    }, { 
+        __index = function(t, k)
+            if _queues[k] then
+                return _queues[k]
+            else
+                local q = qless_queue.new(k, t.client)
+                rawset(t, k, q)
+                return q
+            end
+        end,
+    })
+end
+
+function _queues.counts(self)
+    local res = self.client:call("queues") 
+    return cjson_decode(res)
+end
+
 
 
 local _M = {
@@ -68,11 +123,16 @@ function _M.new(options)
         redis:set_timeout(options.redis.read_timeout)
     end
 
-    return setmetatable({ 
+    local self = setmetatable({ 
         redis = redis,
         worker_name = random_hex(8),
         luascript = qless_luascript.new("qless", redis),
     }, mt)
+
+    self.workers = _workers._new(self)
+    self.queues = _queues._new(self)
+
+    return self
 end
 
 
@@ -82,8 +142,15 @@ end
 
 
 function _M.call(self, command, ...)
-    self.luascript:call(command, ngx_now(), select(1, ...))
+    local res, err = self.luascript:call(command, ngx_now(), select(2, ...))
+    if not res then
+        ngx_log(ngx_ERR, err)
+    end
+    return res, err
 end
+
+
+
 
 
 return _M
