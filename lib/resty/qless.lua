@@ -42,20 +42,60 @@ local function random_hex(len)
 end
 
 
+-- Jobs, to be accessed via qless.jobs.
+local _jobs = {}
+
+function _jobs.new(client)
+    return setmetatable({
+        client = client,
+    }, {
+        __index = _jobs
+    })
+end
+
+function _jobs.complete(self, offset, count)
+    self.client:call("jobs", "complete", offset or 0, count or 25)
+end
+
+function _jobs.tracked(self)
+    local res = self.client:call("track")
+    local tracked_jobs = {}
+    for k,v in pairs(res.jobs) do
+        tracked_jobs[k] = QlessJob.new(client, v)
+    end
+    return cjson_encode(tracked_jobs)
+end
+
+
+function _jobs.tagged(self, tag, offset, count)
+    return self.client:call("tag", "get", tag, offset or 0, count or 25)
+end
+
+function _jobs.failed(self, tag, offset, count)
+    if not tag then
+        return self.client:call("failed")
+    else
+        -- TODO
+    end
+end
+
+function _jobs.get(self, jid)
+    local results = self.client:call("get", jid)
+    -- TODO: Check recurring
+    return QlessJob.new(client, results)
+end
+
 
 -- Workers, to be accessed via qless.workers.
 local _workers = {}
 
-function _workers._new(client)
+function _workers.new(client)
     return setmetatable({ 
-        client = client 
+        client = client,
+        counts = _workers.counts,
     }, {
         __index = function(t, k)
-            if _workers[k] then
-                return _workers[k]
-            else
-                return t.client:call("workers", k)
-            end
+            return t.client:call("workers", k)
         end,
     })
 end
@@ -70,18 +110,15 @@ end
 -- Queues, to be accessed via qless.queues etc.
 local _queues = {}
 
-function _queues._new(client)
+function _queues.new(client)
     return setmetatable({ 
-        client = client 
+        client = client,
+        counts = _queues.counts,
     }, { 
         __index = function(t, k)
-            if _queues[k] then
-                return _queues[k]
-            else
-                local q = qless_queue.new(k, t.client)
-                rawset(t, k, q)
-                return q
-            end
+            local q = qless_queue.new(k, t.client)
+            rawset(t, k, q)
+            return q
         end,
     })
 end
@@ -129,8 +166,9 @@ function _M.new(options)
         luascript = qless_luascript.new("qless", redis),
     }, mt)
 
-    self.workers = _workers._new(self)
-    self.queues = _queues._new(self)
+    self.workers = _workers.new(self)
+    self.queues = _queues.new(self)
+    self.jobs = _jobs.new(self)
 
     return self
 end
@@ -142,15 +180,12 @@ end
 
 
 function _M.call(self, command, ...)
-    local res, err = self.luascript:call(command, ngx_now(), select(2, ...))
+    local res, err = self.luascript:call(command, ngx_now(), select(1, ...))
     if not res then
         ngx_log(ngx_ERR, err)
     end
     return res, err
 end
-
-
-
 
 
 return _M
