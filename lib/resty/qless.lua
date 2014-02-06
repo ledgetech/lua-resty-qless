@@ -145,18 +145,20 @@ local OPTION_DEFAULTS = {
 }
 
 
-function _M.new(options)
+function _M.new(options, redis)
     if not options then options = {} end
     setmetatable(options, { __index = OPTION_DEFAULTS })
     setmetatable(options.redis, { __index = OPTION_DEFAULTS.redis })
 
-    local redis = redis_mod:new()
-    redis:set_timeout(options.redis.connect_timeout)
-    local ok, err = redis:connect(options.redis.host, options.redis.port)
-    if not ok then
-        ngx_log(ngx_ERR, err)
-    else
-        redis:set_timeout(options.redis.read_timeout)
+    if not redis then
+        redis = redis_mod:new()
+        redis:set_timeout(options.redis.connect_timeout)
+        local ok, err = redis:connect(options.redis.host, options.redis.port)
+        if not ok then
+            ngx_log(ngx_ERR, err)
+        else
+            redis:set_timeout(options.redis.read_timeout)
+        end
     end
 
     local self = setmetatable({ 
