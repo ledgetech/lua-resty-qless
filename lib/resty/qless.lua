@@ -6,7 +6,6 @@ local qless_luascript = require "resty.qless.luascript"
 local qless_queue = require "resty.qless.queue"
 
 local ngx_now = ngx.now
-local ngx_time = ngx.time
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
 local ngx_ERR = ngx.ERR
