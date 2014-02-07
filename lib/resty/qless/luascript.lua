@@ -18,7 +18,7 @@ local _M = {
 local mt = { __index = _M }
 
 -- Couldn't find a better way to determine the current script path...
-local current_path = string_sub(debug_getinfo(1).source, 2, string_len("/luascript.lua") * -1)
+local current_path = str_sub(debug_getinfo(1).source, 2, str_len("/luascript.lua") * -1)
 
 -- Load the qless scripts and generate the sha1 digest.
 local f = assert(io_open(current_path .. "../../../qless-core/qless.lua", "r")) 
