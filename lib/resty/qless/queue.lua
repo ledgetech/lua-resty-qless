@@ -1,4 +1,5 @@
 local qless_job = require "resty.qless.job"
+local cjson = require "cjson"
 
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
@@ -59,6 +60,7 @@ end
 
 function _M.pop(self, count)
     local res = self.client:call("pop", self.name, self.worker_name, count or 1)
+    if not res then return nil end
     res = cjson_decode(res)
     local jobs = {}
     for i, job in ipairs(res) do

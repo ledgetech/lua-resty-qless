@@ -4,6 +4,7 @@ local cjson = require "cjson"
 
 local qless_luascript = require "resty.qless.luascript"
 local qless_queue = require "resty.qless.queue"
+local qless_job = require "resty.qless.job"
 
 local ngx_now = ngx.now
 local ngx_log = ngx.log
@@ -60,7 +61,7 @@ function _jobs.tracked(self)
     local res = self.client:call("track")
     local tracked_jobs = {}
     for k,v in pairs(res.jobs) do
-        tracked_jobs[k] = QlessJob.new(client, v)
+        tracked_jobs[k] = qless_job.new(self.client, v)
     end
     return cjson_encode(tracked_jobs)
 end
@@ -81,7 +82,7 @@ end
 function _jobs.get(self, jid)
     local results = self.client:call("get", jid)
     -- TODO: Check recurring
-    return QlessJob.new(client, results)
+    return qless_job.new(self.client, results)
 end
 
 
@@ -135,7 +136,8 @@ local _M = {
 
 local mt = { __index = _M }
 
-local OPTION_DEFAULTS = {
+local DEFAULT_PARAMS = {
+    redis_client = nil,
     redis = {
         host = "127.0.0.1",
         port = 6379,
@@ -145,19 +147,21 @@ local OPTION_DEFAULTS = {
 }
 
 
-function _M.new(options, redis)
-    if not options then options = {} end
-    setmetatable(options, { __index = OPTION_DEFAULTS })
-    setmetatable(options.redis, { __index = OPTION_DEFAULTS.redis })
+function _M.new(params)
+    if not params then params = {} end
+    setmetatable(params, { __index = DEFAULT_PARAMS })
+    setmetatable(params.redis, { __index = DEFAULT_PARAMS.redis })
+
+    local redis = params.redis_client
 
     if not redis then
         redis = redis_mod:new()
-        redis:set_timeout(options.redis.connect_timeout)
-        local ok, err = redis:connect(options.redis.host, options.redis.port)
+        redis:set_timeout(params.redis.connect_timeout)
+        local ok, err = redis:connect(params.redis.host, params.redis.port)
         if not ok then
             ngx_log(ngx_ERR, err)
         else
-            redis:set_timeout(options.redis.read_timeout)
+            redis:set_timeout(params.redis.read_timeout)
         end
     end
 
@@ -176,7 +180,7 @@ end
 
 
 function _M.generate_jid(self)
-    return random_hex(32)
+    return "{"..random_hex(32).."}"
 end
 
 

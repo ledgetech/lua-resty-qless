@@ -1,3 +1,5 @@
+local cjson = require "cjson"
+
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
 local ngx_ERR = ngx.ERR
