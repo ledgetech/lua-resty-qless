@@ -143,6 +143,7 @@ local DEFAULT_PARAMS = {
         port = 6379,
         connect_timeout = 100,
         read_timeout = 5000,
+        database = 0,
     }
 }
 
@@ -161,6 +162,7 @@ function _M.new(params)
         if not ok then
             ngx_log(ngx_ERR, err)
         else
+            redis:select(params.redis.database)
             redis:set_timeout(params.redis.read_timeout)
         end
     end
@@ -180,7 +182,7 @@ end
 
 
 function _M.generate_jid(self)
-    return "{"..random_hex(32).."}"
+    return random_hex(32)
 end
 
 

@@ -9,6 +9,7 @@ my $pwd = cwd();
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_REDIS_PORT} ||= 6379;
+$ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
     lua_package_path "$pwd/lib/?.lua;;";
@@ -17,6 +18,7 @@ our $HttpConfig = qq{
         qless = require "resty.qless"
         cjson = require "cjson"
         redis_params = {
+            host = "127.0.0.1",
             port = $ENV{TEST_REDIS_PORT},
             database = $ENV{TEST_REDIS_DATABASE},
         }
