@@ -7,12 +7,21 @@ plan tests => repeat_each() * (blocks() * 4);
 
 my $pwd = cwd();
 
+$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
+$ENV{TEST_REDIS_PORT} ||= 6379;
+
 our $HttpConfig = qq{
     lua_package_path "$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
+    init_by_lua '
+        qless = require "resty.qless"
+        cjson = require "cjson"
+        redis_params = {
+            port = $ENV{TEST_REDIS_PORT},
+            database = $ENV{TEST_REDIS_DATABASE},
+        }
+    ';
 };
-
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 
 no_long_string();
 #no_diff();
@@ -20,18 +29,42 @@ no_long_string();
 run_tests();
 
 __DATA__
-=== TEST 1: Simple default get.
+=== TEST 1: Prove we can load the module and call a script.
 --- http_config eval: $::HttpConfig
 --- config
-    location = /a {
+    location = /1 {
         content_by_lua '
-            ngx.say("OK")
+            local q = qless.new({ redis = redis_params })
+            ngx.say(cjson.encode(q.queues:counts()))
         ';
     }
 --- request
-GET /a
+GET /1
 --- response_body
-OK
+{}
+--- no_error_log
+[error]
+[warn]
+
+
+=== TEST 2: Prove we can load using an already established Redis connection.
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local redis = require "resty.redis"
+            local r = redis.new()
+            r:connect("127.0.0.1", redis_params.port)
+            r:select(redis_params.database)
+            
+            local q = qless.new({ redis_client = r })
+            ngx.say(cjson.encode(q.queues:counts()))
+        ';
+    }
+--- request
+GET /1
+--- response_body
+{}
 --- no_error_log
 [error]
 [warn]
