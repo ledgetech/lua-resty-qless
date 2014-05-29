@@ -26,7 +26,6 @@ function _M.new(client, job)
         -- Map these for compatability
         job.expires_at = job.expires
         job.worker_name = job.worker
-        job.klass_name = job.klass
         job.kind = job.klass
         job.queue_name = job.queue
         job.original_retries = job.retries
@@ -59,7 +58,7 @@ end
 
 
 function _M.perform(self, work)
-    local func = work[self.klass_name]
+    local func = work[self.kind]
     if func and func.perform and type(func.perform) == "function" then
         return func.perform(self.data)
     else
