@@ -40,14 +40,14 @@ function _M.new(name, client)
 end
 
 
-function _M.put(self, func, data, options)
+function _M.put(self, kind, data, options)
     if not options then options = {} end
     self.client:call(
         "put", 
         self.worker_name, 
         self.name, 
         self.client:generate_jid(), 
-        func, 
+        kind, 
         cjson_encode(data),
         options.delay or 0,
         "priority", options.priority or 0,
@@ -55,6 +55,22 @@ function _M.put(self, func, data, options)
         "retries", options.retries or 5,
         "depends", cjson_encode(options.depends or {})
     )
+end
+
+
+function _M.recur(self, kind, data, options)
+    if not options then options = {} end
+    self.client:call(
+        "recur",
+        self.name,
+        self.client:generate_jid(),
+        kind,
+        cjson_encode(data),
+        "interval", options.interval, options.offset or 0,
+        "priority", options.priority or 0,
+        "tags", cjson_encode(options.tags or {}),
+        "retries", options.retries or 5,
+        "backlog", options.backlog or 0)
 end
 
 
