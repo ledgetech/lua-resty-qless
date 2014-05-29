@@ -20,12 +20,14 @@ function _M.new(client, job)
 
     if job then 
         job.client = client
+
         job.data = cjson_decode(job.data)
 
         -- Map these for compatability
         job.expires_at = job.expires
         job.worker_name = job.worker
         job.klass_name = job.klass
+        job.kind = job.klass
         job.queue_name = job.queue
         job.original_retries = job.retries
         job.retries_left = job.remaining
@@ -52,6 +54,16 @@ function _M.new(client, job)
         }
 
         return setmetatable({ client = client }, setmetatable(job_defaults, mt))
+    end
+end
+
+
+function _M.perform(self, work)
+    local func = work[self.klass_name]
+    if func and func.perform and type(func.perform) == "function" then
+        return func.perform(self.data)
+    else
+        ngx_log(ngx_DEBUG, "could not find work for ", self:description())
     end
 end
 
