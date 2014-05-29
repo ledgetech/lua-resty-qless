@@ -4,6 +4,7 @@ local qless = require "resty.qless"
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
 local ngx_ERR = ngx.ERR
+local ngx_INFO = ngx.INFO
 local ngx_now = ngx.now
 local ngx_timer_at = ngx.timer.at
 local cjson_encode = cjson.encode
@@ -17,6 +18,13 @@ local _M = {
 
 local mt = { __index = _M }
 
+local DEFAULT_OPTIONS = {
+    concurrency = 1,
+    interval = 10,
+    reserver = "ordered",
+    queues = {},
+}
+
 
 function _M.new(params)
     return setmetatable({ params = params }, mt)
@@ -24,6 +32,8 @@ end
 
 
 function _M.start(self, work, options)
+    setmetatable(options, { __index = DEFAULT_OPTIONS })
+
     local function worker(premature)
         if not premature then
             local q = qless.new(self.params)
@@ -41,16 +51,18 @@ function _M.start(self, work, options)
                 co_yield() -- The scheduler will resume us.
             until not job
 
-            local ok, err = ngx_timer_at(options.interval or 10, worker)
+            local ok, err = ngx_timer_at(options.interval, worker)
             if not ok then
                 ngx_log("failed to run worker: ", err)
             end
         end
     end
 
-    local ok, err = ngx_timer_at(0, worker)
-    if not ok then
-        ngx_log("failed to start worker: ", err)
+    for i = 1,(options.concurrency) do
+        local ok, err = ngx_timer_at(i - 1, worker)
+        if not ok then
+            ngx_log("failed to start worker: ", err)
+        end
     end
 end
 
