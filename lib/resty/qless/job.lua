@@ -3,6 +3,7 @@ local cjson = require "cjson"
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
 local ngx_ERR = ngx.ERR
+local ngx_INFO = ngx.INFO
 local ngx_now = ngx.now
 local cjson_encode = cjson.encode
 local cjson_decode = cjson.decode
@@ -13,7 +14,6 @@ local _M = {
 }
 
 local mt = { __index = _M }
-
 
 
 function _M.new(client, job)
@@ -60,6 +60,7 @@ end
 function _M.perform(self, work)
     local func = work[self.kind]
     if func and func.perform and type(func.perform) == "function" then
+        ngx_log(ngx_INFO, "performing ", self:description())
         return func.perform(self.data)
     else
         ngx_log(ngx_DEBUG, "could not find work for ", self:description())
@@ -112,5 +113,11 @@ function _M.complete(self, next_queue, options)
         ngx_log(ngx_ERR, err)
     end
 end
+
+
+function _M.unrecur(self)
+    self.client:call("unrecur", self.jid)
+end
+
 
 return _M

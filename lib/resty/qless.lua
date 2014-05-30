@@ -6,6 +6,7 @@ local qless_luascript = require "resty.qless.luascript"
 local qless_queue = require "resty.qless.queue"
 local qless_job = require "resty.qless.job"
 
+local ngx_var = ngx.var
 local ngx_now = ngx.now
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
@@ -23,6 +24,7 @@ ffi_cdef[[
 typedef unsigned char u_char;
 u_char * ngx_hex_dump(u_char *dst, const u_char *src, size_t len);
 int RAND_pseudo_bytes(u_char *buf, int num);
+int gethostname (char *name, size_t size);
 ]]
 
 
@@ -42,8 +44,16 @@ local function random_hex(len)
 end
 
 
+function gethostname()
+    local name = ffi_new("char[?]", 128)
+    C.gethostname(name, 128)
+    return ffi_string(name, 128)
+end
+
+
 -- Jobs, to be accessed via qless.jobs.
 local _jobs = {}
+
 
 function _jobs.new(client)
     return setmetatable({
@@ -53,10 +63,12 @@ function _jobs.new(client)
     })
 end
 
+
 function _jobs.complete(self, offset, count)
     self.client:call("jobs", "complete", offset or 0, count or 25)
 end
 
+-- TODO: Does this even work?
 function _jobs.tracked(self)
     local res = self.client:call("track")
     local tracked_jobs = {}
@@ -71,19 +83,40 @@ function _jobs.tagged(self, tag, offset, count)
     return self.client:call("tag", "get", tag, offset or 0, count or 25)
 end
 
+
 function _jobs.failed(self, tag, offset, count)
     if not tag then
-        return self.client:call("failed")
+        return cjson_decode(self.client:call("failed"))
     else
-        -- TODO
+        local results = cjson_decode(self.client:call("failt", tag, offset or 0, count or 25))
+        results["jobs"] = self:multiget(results["jobs"])
+        return results
     end
 end
 
+
 function _jobs.get(self, jid)
     local results = self.client:call("get", jid)
-    -- TODO: Check recurring
-    return qless_job.new(self.client, results)
+    if not results then
+        results = self.client:call("recur.get", jid)
+        if results then
+            return qless_recurring_job.new(self.client, results)
+        end
+    else
+        return qless_job.new(self.client, results)
+    end
 end
+
+
+function _jobs.multiget(self, jids)
+    local res = self.client:call("multiget", jids)
+    local jobs = {}
+    for _,data in ipairs(res) do
+        jobs[k] = qless_job.new(client, data)
+    end
+    return jobs
+end
+
 
 
 -- Workers, to be accessed via qless.workers.
@@ -169,7 +202,7 @@ function _M.new(params)
 
     local self = setmetatable({ 
         redis = redis,
-        worker_name = random_hex(8),
+        worker_name = gethostname() .. "-" .. ngx.worker.pid() .. "-" .. random_hex(8),
         luascript = qless_luascript.new("qless", redis),
     }, mt)
 
@@ -192,6 +225,11 @@ function _M.call(self, command, ...)
         ngx_log(ngx_ERR, err)
     end
     return res, err
+end
+
+
+function _M.deregister_workers(self, worker_names)
+    self:call("worker.deregister", unpack(worker_names))
 end
 
 

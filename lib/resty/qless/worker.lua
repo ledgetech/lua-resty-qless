@@ -41,15 +41,18 @@ function _M.start(self, work, options)
             repeat
                 local job = queue:pop()
                 if job then
-                    local res = job:perform(work)
-                    if res then
+                    local res, err = job:perform(work)
+                    if res == true then
                         job:complete()
                     else
+                        ngx_log(ngx_ERR, "Job failed ", err)
                        -- job:fail()
                     end
                 end
                 co_yield() -- The scheduler will resume us.
             until not job
+
+            q:deregister_workers({ q.worker_name })
 
             local ok, err = ngx_timer_at(options.interval, worker)
             if not ok then
@@ -59,7 +62,7 @@ function _M.start(self, work, options)
     end
 
     for i = 1,(options.concurrency) do
-        local ok, err = ngx_timer_at(i - 1, worker)
+        local ok, err = ngx_timer_at(i, worker)
         if not ok then
             ngx_log("failed to start worker: ", err)
         end
