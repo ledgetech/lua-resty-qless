@@ -45,9 +45,9 @@ end
 
 
 function gethostname()
-    local name = ffi_new("char[?]", 128)
-    C.gethostname(name, 128)
-    return ffi_string(name, 128)
+    local name = ffi_new("char[?]", 255)
+    C.gethostname(name, 255)
+    return ffi_string(name)
 end
 
 
