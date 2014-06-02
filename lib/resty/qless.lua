@@ -18,6 +18,7 @@ local ffi_string = ffi.string
 local C = ffi.C
 local cjson_encode = cjson.encode
 local cjson_decode = cjson.decode
+local tbl_insert = table.insert
 
 
 ffi_cdef[[
@@ -68,6 +69,7 @@ function _jobs.complete(self, offset, count)
     self.client:call("jobs", "complete", offset or 0, count or 25)
 end
 
+
 -- TODO: Does this even work?
 function _jobs.tracked(self)
     local res = self.client:call("track")
@@ -80,7 +82,7 @@ end
 
 
 function _jobs.tagged(self, tag, offset, count)
-    return self.client:call("tag", "get", tag, offset or 0, count or 25)
+    return cjson_decode(self.client:call("tag", "get", tag, offset or 0, count or 25))
 end
 
 
@@ -88,7 +90,7 @@ function _jobs.failed(self, tag, offset, count)
     if not tag then
         return cjson_decode(self.client:call("failed"))
     else
-        local results = cjson_decode(self.client:call("failt", tag, offset or 0, count or 25))
+        local results = cjson_decode(self.client:call("failed", tag, offset or 0, count or 25))
         results["jobs"] = self:multiget(results["jobs"])
         return results
     end
@@ -98,9 +100,10 @@ end
 function _jobs.get(self, jid)
     local results = self.client:call("get", jid)
     if not results then
+        -- Perhaps this jid is a recurring job.
         results = self.client:call("recur.get", jid)
         if results then
-            return qless_recurring_job.new(self.client, results)
+            return --qless_recurring_job.new(self.client, results)
         end
     else
         return qless_job.new(self.client, results)
@@ -112,11 +115,10 @@ function _jobs.multiget(self, jids)
     local res = self.client:call("multiget", jids)
     local jobs = {}
     for _,data in ipairs(res) do
-        jobs[k] = qless_job.new(client, data)
+        tbl_insert(jobs, qless_job.new(self.client, data))
     end
     return jobs
 end
-
 
 
 -- Workers, to be accessed via qless.workers.
@@ -248,7 +250,7 @@ function _M.deregister_workers(self, worker_names)
 end
 
 
-function _M.bulk_cancel(jids)
+function _M.bulk_cancel(self, jids)
     return self:call("cancel", jids)
 end
 
