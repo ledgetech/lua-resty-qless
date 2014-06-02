@@ -57,13 +57,24 @@ function _M.new(client, job)
 end
 
 
+function _M.queue(self)
+    return self.queue or qless_queue.new(self.queue_name, self.client)
+end
+
+
 function _M.perform(self, work)
     local func = work[self.kind]
     if func and func.perform and type(func.perform) == "function" then
-        ngx_log(ngx_INFO, "performing ", self:description())
-        return func.perform(self.data)
+        local res, err = func.perform(self.data)
+        if not res then
+            return nil, "failed-" .. self.queue_name, "'" .. self.kind .. "' " .. err or ""
+        else
+            return true
+        end
     else
-        ngx_log(ngx_DEBUG, "could not find work for ", self:description())
+        return nil, 
+            self.queue_name .. "-invalid-job-spec", 
+            "Job '" .. self.kind .. "' doesn't exist or has no perform function"
     end
 end
 
@@ -112,6 +123,17 @@ function _M.complete(self, next_queue, options)
     if not res then
         ngx_log(ngx_ERR, err)
     end
+end
+
+
+function _M.fail(self, group, message)
+    self.client:call("fail", 
+        self.jid, 
+        self.worker_name, 
+        group or "mygroup", 
+        message or "no err message", 
+        cjson_encode(self.data)
+    )
 end
 
 
