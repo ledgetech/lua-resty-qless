@@ -27,7 +27,7 @@ local DEFAULT_OPTIONS = {
 
 
 function _M.new(params)
-    return setmetatable({ params = params }, mt)
+    return setmetatable({ params = params or {} }, mt)
 end
 
 
@@ -74,6 +74,11 @@ function _M.start(self, work, options, around)
             ngx_log(ngx_ERR, "failed to start worker: ", err)
         end
     end
+end
+
+
+function _M.set_redis_client(self, client)
+    self.params.redis_client = client
 end
 
 
