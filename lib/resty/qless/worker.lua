@@ -31,11 +31,15 @@ function _M.new(params)
 end
 
 
-function _M.start(self, work, options)
+function _M.start(self, work, options, around)
     setmetatable(options, { __index = DEFAULT_OPTIONS })
 
     local function worker(premature)
         if not premature then
+            if around and around.before and type(around.before) == "function" then
+                around.before()
+            end
+
             local q = qless.new(self.params)
             local queue = q.queues[options.queues[1]]
             repeat
@@ -53,6 +57,10 @@ function _M.start(self, work, options)
             until not job
 
             q:deregister_workers({ q.worker_name })
+            
+            if around and around.after and type(around.after) == "function" then
+                around.after()
+            end
 
             local ok, err = ngx_timer_at(options.interval, worker)
             if not ok then
