@@ -44,7 +44,7 @@ local function random_hex(len)
 end
 
 
-function gethostname()
+local function gethostname()
     local name = ffi_new("char[?]", 255)
     C.gethostname(name, 255)
     return ffi_string(name)
@@ -228,8 +228,28 @@ function _M.call(self, command, ...)
 end
 
 
+function _M.track(self, jid)
+    return self:call("track", "track", jid)
+end
+
+
+function _M.untrack(self, jid)
+    return self:call("track", "untrack", jid)
+end
+
+
+function _M.tags(self, offset, count)
+    return cjson_decode(self:call("tag", "top", offset or 0, count or 100))
+end
+
+
 function _M.deregister_workers(self, worker_names)
-    self:call("worker.deregister", unpack(worker_names))
+    return self:call("worker.deregister", unpack(worker_names))
+end
+
+
+function _M.bulk_cancel(jids)
+    return self:call("cancel", jids)
 end
 
 
