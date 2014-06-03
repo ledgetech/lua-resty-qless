@@ -106,7 +106,7 @@ function _jobs.get(self, jid)
             return --qless_recurring_job.new(self.client, results)
         end
     else
-        return qless_job.new(self.client, results)
+        return qless_job.new(self.client, cjson_decode(results))
     end
 end
 
