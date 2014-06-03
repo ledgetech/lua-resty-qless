@@ -15,7 +15,19 @@ local _M = {
 }
 
 local mt = { 
-    __index = _M
+    __index = function (t, k)
+        if k == "priority" then
+            return t.__priority
+        else
+            return _M[k]
+        end
+    end,
+
+    __newindex = function(t, k, v)
+        if k == "priority" then
+            return rawset(t, "__priority", t.client:call("priority", t.jid, v))
+        end
+    end,
 }
 
 
@@ -24,7 +36,7 @@ function _M.new(client, atts)
         client = client,
     }
 
-    local map = { "jid", "data", "priority", "tags", "state", "tracked",
+    local map = { "jid", "data", "tags", "state", "tracked",
         "failure", "dependencies", "dependents", "spawned_from_jid" }
 
     for _,v in ipairs(map) do
@@ -32,6 +44,7 @@ function _M.new(client, atts)
     end
 
     job.data = cjson_decode(job.data)
+    job.__priority = atts.priority
 
     job.expires_at = atts.expires
     job.worker_name = atts.worker
