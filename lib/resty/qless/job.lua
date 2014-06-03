@@ -1,4 +1,5 @@
 local cjson = require "cjson"
+local qless_queue = require "resty.qless.queue"
 
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
@@ -13,47 +14,61 @@ local _M = {
     _VERSION = '0.01',
 }
 
-local mt = { __index = _M }
+local mt = { 
+    __index = _M
+}
 
 
-function _M.new(client, job)
+function _M.new(client, atts)
+    local job = {
+        client = client,
+    }
 
-    if job then 
-        job.client = client
+    local map = { "jid", "data", "priority", "tags", "state", "tracked",
+        "failure", "dependencies", "dependents", "spawned_from_jid" }
 
-        job.data = cjson_decode(job.data)
-
-        -- Map these for compatability
-        job.expires_at = job.expires
-        job.worker_name = job.worker
-        job.kind = job.klass
-        job.queue_name = job.queue
-        job.original_retries = job.retries
-        job.retries_left = job.remaining
-        job.raw_queue_history = job.history
-        return setmetatable(job, mt)
-    else
-        local job_defaults = {
-            jid              = client:generate_jid(),
-            data             = {},
-            klass            = 'mock_klass',
-            priority         = 0,
-            tags             = {},
-            worker           = 'mock_worker',
-            expires          = ngx_now() + (60 * 60), -- an hour from now
-            state            = 'running',
-            tracked          = false,
-            queue            = 'mock_queue',
-            retries          = 5,
-            remaining        = 5,
-            failure          = {},
-            history          = {},
-            dependencies     = {},
-            dependents       = {}, 
-        }
-
-        return setmetatable({ client = client }, setmetatable(job_defaults, mt))
+    for _,v in ipairs(map) do
+        job[v] = atts[v]
     end
+
+    job.data = cjson_decode(job.data)
+
+    job.expires_at = atts.expires
+    job.worker_name = atts.worker
+    job.kind = atts.klass
+    job.queue_name = atts.queue
+    job.original_retries = atts.retries
+    job.retries_left = atts.remaining
+    job.raw_queue_history = atts.history
+
+    return setmetatable(job, mt)
+end
+
+
+function _M.build(client, kind, atts)
+    local defaults = {
+        jid              = client:generate_jid(),
+        spawned_from_jid = nil,
+        data             = {},
+        klass            = kind,
+        priority         = 0,
+        tags             = {},
+        worker           = 'mock_worker',
+        expires          = ngx_now() + (60 * 60), -- an hour from now
+        state            = 'running',
+        tracked          = false,
+        queue            = 'mock_queue',
+        retries          = 5,
+        remaining        = 5,
+        failure          = {},
+        history          = {},
+        dependencies     = {},
+        dependents       = {}, 
+    }
+    setmetatable(atts, { __index = defaults })
+    atts.data = cjson_encode(atts.data)
+
+    return _M.new(client, atts)
 end
 
 
@@ -96,11 +111,13 @@ function _M.heartbeat(self)
         self.worker_name, 
         cjson_encode(self.data)
     )
+    return self.expires_at
 end
 
 
 function _M.complete(self, next_queue, options)
     if not options then options = {} end
+
     local res, err
     if next_queue then
         res, err = self.client:call("complete",
@@ -120,14 +137,15 @@ function _M.complete(self, next_queue, options)
             cjson_encode(self.data)
         )
     end
-    if not res then
-        ngx_log(ngx_ERR, err)
-    end
+
+    if not res then ngx_log(ngx_ERR, err) end
+
+    return res, err
 end
 
 
 function _M.fail(self, group, message)
-    self.client:call("fail", 
+    return self.client:call("fail", 
         self.jid, 
         self.worker_name, 
         group or "mygroup", 
@@ -138,7 +156,7 @@ end
 
 
 function _M.unrecur(self)
-    self.client:call("unrecur", self.jid)
+    return self.client:call("unrecur", self.jid)
 end
 
 
