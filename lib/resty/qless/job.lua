@@ -1,5 +1,4 @@
 local cjson = require "cjson"
-local qless_queue = require "resty.qless.queue"
 
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
@@ -15,6 +14,8 @@ local _M = {
 }
 
 local mt = { 
+    -- We hide priority as __priority, and use metamethods to update redis
+    -- when the value is set.
     __index = function (t, k)
         if k == "priority" then
             return t.__priority
@@ -58,6 +59,7 @@ function _M.new(client, atts)
 end
 
 
+-- For building a job from attribute data, without the roundtrip to redis.
 function _M.build(client, kind, atts)
     local defaults = {
         jid              = client:generate_jid(),
@@ -86,7 +88,7 @@ end
 
 
 function _M.queue(self)
-    return self.queue or qless_queue.new(self.queue_name, self.client)
+    return self.client.queues[self.queue_name]
 end
 
 
@@ -114,6 +116,26 @@ end
 
 function _M.ttl(self)
     return self.expires_at - ngx_now()
+end
+
+
+function _M.spawned_from(self)
+    return self.spawned_from or self.client.jobs:get(self.spawned_from_jid)
+end
+
+
+function _M.move(self, queue, options)
+    if not options then options = {} end
+
+    -- TODO: Note state changed
+    return self.client:call("put", self.client.worker_name, queue, self.jid, self.kind,
+        cjson_encode(options.data or self.data),
+        options.delay or 0,
+        "priority", options.priority or self.priority,
+        "tags", cjson_encode(options.tags or self.tags),
+        "retries", options.retries or self.original_retries,
+        "depends", cjson_encode(options.depends or self.dependencies)
+    )     
 end
 
 
