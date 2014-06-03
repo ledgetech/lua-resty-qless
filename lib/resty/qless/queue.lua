@@ -42,7 +42,7 @@ end
 
 function _M.put(self, kind, data, options)
     if not options then options = {} end
-    self.client:call(
+    return self.client:call(
         "put", 
         self.worker_name, 
         self.name, 
@@ -78,10 +78,12 @@ function _M.pop(self, count)
     local res = self.client:call("pop", self.name, self.worker_name, count or 1)
     if not res then return nil end
     res = cjson_decode(res)
+
     local jobs = {}
     for i, job in ipairs(res) do
         jobs[i] = qless_job.new(self.client, job)
     end
+
     if not count then
         return jobs[1]
     else
