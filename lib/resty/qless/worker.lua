@@ -42,6 +42,7 @@ function _M.start(self, work, options, around)
 
             local q = qless.new(self.params)
             local queue = q.queues[options.queues[1]]
+
             repeat
                 local job = queue:pop()
                 if job then

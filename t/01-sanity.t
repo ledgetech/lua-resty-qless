@@ -15,7 +15,6 @@ our $HttpConfig = qq{
     lua_package_path "$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua '
-        qless = require "resty.qless"
         cjson = require "cjson"
         redis_params = {
             host = "127.0.0.1",
@@ -36,6 +35,7 @@ __DATA__
 --- config
     location = /1 {
         content_by_lua '
+            local qless = require "resty.qless"
             local q = qless.new({ redis = redis_params })
             ngx.say(cjson.encode(q.queues:counts()))
         ';
@@ -54,6 +54,7 @@ GET /1
 --- config
     location = /1 {
         content_by_lua '
+            local qless = require "resty.qless"
             local redis = require "resty.redis"
             local r = redis.new()
             r:connect("127.0.0.1", redis_params.port)
