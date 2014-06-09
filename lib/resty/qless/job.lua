@@ -139,6 +139,23 @@ function _M.move(self, queue, options)
 end
 
 
+function _M.fail(self, group, message)
+    -- TODO: Note state changed
+    local res, err = self.client:call("fail", 
+        self.jid, 
+        self.client.worker_name,
+        group, message,
+        cjson_encode(self.data))
+
+    if not res then
+        ngx_log(ngx_ERR, "Could not fail job: ", err)
+        return false
+    end
+
+    return true
+end
+
+
 function _M.heartbeat(self)
     self.expires_at = self.client:call(
         "heartbeat", 
