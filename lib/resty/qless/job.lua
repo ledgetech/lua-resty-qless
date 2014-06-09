@@ -196,6 +196,12 @@ function _M.complete(self, next_queue, options)
 end
 
 
+function _M.cancel(self)
+    -- TODO: Note state changed
+    return self.client:call("cancel", self.jid)
+end
+
+
 function _M.fail(self, group, message)
     return self.client:call("fail", 
         self.jid, 
