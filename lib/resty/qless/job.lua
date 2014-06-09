@@ -222,19 +222,49 @@ function _M.untag(self, tags)
 end
 
 
-function _M.fail(self, group, message)
-    return self.client:call("fail", 
+function _M.retry(self, delay, group, message)
+    if not delay then delay = 0 end
+
+    -- TODO: Note state changed
+
+    return self.client:call("retry", 
         self.jid, 
+        self.queue_name, 
         self.worker_name, 
-        group or "mygroup", 
-        message or "no err message", 
-        cjson_encode(self.data)
-    )
+        delay, 
+        group, message)
 end
 
 
-function _M.unrecur(self)
-    return self.client:call("unrecur", self.jid)
+function _M.depend(self, jids)
+    return not not self.client:call("depends", self.jid, "on", unpack(jids))
+end
+
+
+function _M.undepend(self, jids)
+    return not not self.client:call("depends", self.jid, "off", unpack(jids))
+end
+
+
+function _M.timeout(self)
+    return self.clientL:call("timeout", self.jid)
+end
+
+
+function _M.log(self, message, data)
+    if data then data = cjson_encode(data)
+
+    return self.client:call("log", self.jid, message, data)
+end
+
+
+--[[
+TODO: fail, complete, cancel, move, retry before / after callbacks
+]]--
+
+
+function _M.note_state_changed(self, event)
+    -- TODO
 end
 
 
