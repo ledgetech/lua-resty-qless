@@ -54,14 +54,13 @@ end
 
 -- Jobs, to be accessed via qless.jobs.
 local _jobs = {}
+local _jobs_mt = { __index = _jobs }
 
 
 function _jobs.new(client)
     return setmetatable({
         client = client,
-    }, {
-        __index = _jobs
-    })
+    }, _jobs_mt)
 end
 
 

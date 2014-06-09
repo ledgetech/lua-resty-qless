@@ -110,7 +110,7 @@ end
 
 
 function _M.description(self)
-    return self.klass .. " (" .. self.jid .. " / " .. self.queue .. " / " .. self.state .. ")"
+    return self.kind .. " (" .. self.jid .. " / " .. self.queue_name .. " / " .. self.state .. ")"
 end
 
 
@@ -120,7 +120,11 @@ end
 
 
 function _M.spawned_from(self)
-    return self.spawned_from or self.client.jobs:get(self.spawned_from_jid)
+    if self.spawned_from_jid then
+        return self.spawned_from or self.client.jobs:get(self.spawned_from_jid)
+    else
+        return nil
+    end
 end
 
 

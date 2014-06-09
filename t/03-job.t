@@ -64,6 +64,10 @@ __DATA__
             ngx.say("original_retries:", job.retries)
             ngx.say("retries_left:", job.retries_left)
             ngx.say("raw_queue_history_1_q:", job.raw_queue_history[1].q)
+
+            ngx.say("description:", job:description())
+            ngx.say("ttl:", math.ceil(job:ttl()))
+            ngx.say("spawned_from:", job:spawned_from())
         ';
     }
 --- request
@@ -88,6 +92,9 @@ queue_name:queue_2
 original_retries:nil
 retries_left:5
 raw_queue_history_1_q:queue_2
+description:job_kind_1 \([a-z0-9]+ / queue_2 / running\)
+ttl:60
+spawned_from:nil
 --- no_error_log
 [error]
 [warn]
@@ -123,6 +130,31 @@ jid_match:true
 data_a:1
 priority:5
 tag_1:hello
+--- no_error_log
+[error]
+[warn]
+
+
+=== TEST 3: Fail a job
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_4"]
+
+            local jid = queue:put("job_kind_1")
+            local job = queue:pop()
+            job:fail("failed-jobs", "testing")
+            local failed = q.jobs:failed()
+
+        ';
+    }
+--- request
+GET /1
+--- response_body
 --- no_error_log
 [error]
 [warn]
