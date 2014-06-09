@@ -50,7 +50,26 @@ local _M = {
     _VERSION = '0.01',
 }
 
-local mt = { __index = _M }
+
+local mt = { 
+    __index = function(t, k)
+        if k == "heartbeat" then
+            return _M.get_config(k)
+        elseif k == "max_concurrency" then
+            return tonumber(_M.get_config("max-concurrency"))
+        else
+            return _M[k]
+        end
+    end,
+
+    __newindex = function(t, k, v)
+        if k == "heartbeat" then
+            return _M.set_config(k, v)
+        elseif k == "max_concurrency" then
+            return _M.set_config("max-concurrency", v)
+        end
+    end,
+}
 
 
 function _M.new(name, client)
@@ -62,6 +81,48 @@ function _M.new(name, client)
 
     self.jobs = _queue_jobs._new(self.name, self.client)
     return self
+end
+
+
+local function set_config(self, config, value)
+    -- TODO
+    --@client.config["#{@name}-#{config}"] = value
+end
+
+
+local function get_config(self, config)
+    -- TODO
+    -- @client.config["#{@name}-#{config}"]
+end
+
+
+function _M.counts(self)
+    return cjson_decode(self.cient:call("queues", self.name))
+end
+
+
+function _M.paused(self)
+    return self:counts().paused or 0
+end
+
+
+function _M.pause(self, options)
+    if not options then options = {} end
+
+    local client = self.client
+    local res, err
+    res, err = client:call("pause", self.name)
+    
+    if options.stop_jobs then
+        res, err = client:call("timeout", self.jobs:running(0, -1))
+    end
+
+    return res, err
+end
+
+
+function _M.unpause(self)
+    return self.client:call("unpause", self.name)
 end
 
 
@@ -85,7 +146,7 @@ end
 
 function _M.recur(self, kind, data, options)
     if not options then options = {} end
-    self.client:call(
+    return self.client:call(
         "recur",
         self.name,
         self.client:generate_jid(),
