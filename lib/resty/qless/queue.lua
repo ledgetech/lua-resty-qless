@@ -97,12 +97,13 @@ end
 
 
 function _M.counts(self)
-    return cjson_decode(self.cient:call("queues", self.name))
+    local counts = self.client:call("queues", self.name)
+    return cjson_decode(counts)
 end
 
 
 function _M.paused(self)
-    return self:counts().paused or 0
+    return self:counts().paused or false
 end
 
 
