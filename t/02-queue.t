@@ -174,11 +174,76 @@ false
     }
 --- request
 GET /1
+--- response_body_like
+single:job_kind_\d
+multiple:job_kind_\d
+multiple:job_kind_\d
+multiple:job_kind_\d
+--- no_error_log
+[error]
+[warn]
+
+
+=== TEST 5: Pop some jobs
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_1"]
+
+            local job1 = queue:pop()
+
+            local counts = queue:counts()
+            ngx.say("running:", counts["running"])
+            ngx.say("waiting:", counts["waiting"])
+            ngx.say("scheduled:", counts["scheduled"])
+
+            local jobs23 = queue:pop(2)
+            
+            local counts = queue:counts()
+            ngx.say("running:", counts["running"])
+            ngx.say("waiting:", counts["waiting"])
+            ngx.say("scheduled:", counts["scheduled"])
+        ';
+    }
+--- request
+GET /1
 --- response_body
-single:job_kind_1
-multiple:job_kind_1
-multiple:job_kind_2
-multiple:job_kind_3
+running:1
+waiting:2
+scheduled:0
+running:3
+waiting:0
+scheduled:0
+--- no_error_log
+[error]
+[warn]
+
+
+=== TEST 6: Check the stats
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_1"]
+
+            local stats = queue:stats()
+            ngx.say(stats.wait.count)
+
+            ngx.say(queue:length())
+        ';
+    }
+--- request
+GET /1
+--- response_body
+3
+3
 --- no_error_log
 [error]
 [warn]
