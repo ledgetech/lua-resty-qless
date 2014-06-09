@@ -202,6 +202,26 @@ function _M.cancel(self)
 end
 
 
+function _M.track(self)
+    return self.client:call("track", self.jid)
+end
+
+
+function _M.untrack(self)
+    return self.client:call("untrack", self.jid)
+end
+
+
+function _M.tag(self, tags)
+    return self.client:call("tag", "add", self.jid, unpack(tags))
+end
+
+
+function _M.untag(self, tags)
+    return self.client:call("tag", "remove", self.jid, unpack(tags))
+end
+
+
 function _M.fail(self, group, message)
     return self.client:call("fail", 
         self.jid, 
