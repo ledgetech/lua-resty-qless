@@ -9,16 +9,41 @@ local cjson_encode = cjson.encode
 local cjson_decode = cjson.decode
 
 
--- jobs, to be accessed via queue.jobs.
-local _jobs = {}
 
-function _jobs._new(name, client)
-    return setmetatable({ name = name, client = client }, { __index = _jobs })
+-- Object for interacting with jobs in different states in the queue. Not meant to be 
+-- instantiated directly, it's accessed via queue.jobs.
+local _queue_jobs = {}
+
+
+function _queue_jobs._new(name, client)
+    return setmetatable({ name = name, client = client }, { __index = _queue_jobs })
 end
 
-function _jobs.running(self, start, count)
+
+function _queue_jobs.running(self, start, count)
     return self.client:call("jobs", "running", self.name, start or 0, count or 25)
 end
+
+
+function _queue_jobs.stalled(self, start, count)
+    return self.client:call("jobs", "stalled", self.name, start or 0, count or 25)
+end
+
+
+function _queue_jobs.scheduled(self, start, count)
+    return self.client:call("jobs", "scheduled", self.name, start or 0, count or 25)
+end
+    
+
+function _queue_jobs.depends(self, start, count)
+    return self.client:call("jobs", "depends", self.name, start or 0, count or 25)
+end
+
+
+function _queue_jobs.recurring(self, start, count)
+    return self.client:call("jobs", "recurring", self.name, start or 0, count or 25)
+end
+
 
 
 local _M = {
@@ -35,7 +60,7 @@ function _M.new(name, client)
         worker_name = client.worker_name,
     }, mt)
 
-    self.jobs = _jobs._new(self.name, self.client)
+    self.jobs = _queue_jobs._new(self.name, self.client)
     return self
 end
 
