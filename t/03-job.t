@@ -164,3 +164,33 @@ failed:1
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 4: Heartbeat
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_5"]
+            local jid = queue:put("job_kind_1")
+
+            ngx.sleep(1)
+
+            local job = queue:pop()
+            ngx.say("ttl:", job:ttl())
+
+            local newttl = job:heartbeat()
+
+            ngx.say("newttl:", newttl)
+            ngx.say("ttl:", job:ttl())
+        ';
+    }
+--- request
+GET /1
+--- response_body
+--- no_error_log
+[error]
+[warn]
