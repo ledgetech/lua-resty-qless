@@ -177,20 +177,21 @@ failed:1
             local queue = q.queues["queue_5"]
             local jid = queue:put("job_kind_1")
 
-            ngx.sleep(1)
 
             local job = queue:pop()
-            ngx.say("ttl:", job:ttl())
+            ngx.say("ttl:", math.ceil(job:ttl()))
 
-            local newttl = job:heartbeat()
+            ngx.sleep(1)
+            local expires = job:heartbeat()
 
-            ngx.say("newttl:", newttl)
-            ngx.say("ttl:", job:ttl())
+            ngx.say("ttl:", math.ceil(job:ttl()))
         ';
     }
 --- request
 GET /1
 --- response_body
+ttl:60
+ttl:60
 --- no_error_log
 [error]
 [warn]
