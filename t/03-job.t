@@ -145,16 +145,22 @@ tag_1:hello
 
             local queue = q.queues["queue_4"]
 
+            local failed = q.jobs:failed()
+            ngx.say("failed:", failed["failed-jobs"])
+
             local jid = queue:put("job_kind_1")
             local job = queue:pop()
             job:fail("failed-jobs", "testing")
-            local failed = q.jobs:failed()
 
+            local failed = q.jobs:failed()
+            ngx.say("failed:", failed["failed-jobs"])
         ';
     }
 --- request
 GET /1
 --- response_body
+failed:nil
+failed:1
 --- no_error_log
 [error]
 [warn]

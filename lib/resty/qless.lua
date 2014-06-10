@@ -87,7 +87,8 @@ end
 
 function _jobs.failed(self, tag, offset, count)
     if not tag then
-        return cjson_decode(self.client:call("failed"))
+        local failed = self.client:call("failed")
+        return cjson_decode(failed)
     else
         local results = cjson_decode(self.client:call("failed", tag, offset or 0, count or 25))
         results["jobs"] = self:multiget(results["jobs"])
