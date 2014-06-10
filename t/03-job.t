@@ -328,3 +328,25 @@ jobs:0
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 7: Tag and untag jobs
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_9"]
+            local jid = queue:put("job_kind_1")
+
+            local tagged = q.jobs:tagged()
+        ';
+    }
+--- request
+GET /1
+--- response_body
+--- no_error_log
+[error]
+[warn]
