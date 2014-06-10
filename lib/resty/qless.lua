@@ -84,7 +84,7 @@ end
 
 
 function _jobs.tagged(self, tag, offset, count)
-    return cjson_decode(self.client:call("tag", "get", tag, offset or 0, count or 25))
+    return cjson_decode(select(1, self.client:call("tag", "get", tag, offset or 0, count or 25)))
 end
 
 
