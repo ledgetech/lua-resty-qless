@@ -75,7 +75,7 @@ function _jobs.tracked(self)
     res = cjson_decode(res)
 
     local tracked_jobs = {}
-    for k,v in pairs(res) do
+    for k,v in pairs(res.jobs) do
         tracked_jobs[k] = qless_job.new(self.client, v)
     end
     res.jobs = tracked_jobs
@@ -84,7 +84,10 @@ end
 
 
 function _jobs.tagged(self, tag, offset, count)
-    return cjson_decode(select(1, self.client:call("tag", "get", tag, offset or 0, count or 25)))
+    local tagged = self.client:call("tag", "get", tag, offset or 0, count or 25)
+    if tagged then
+        return cjson_decode(tagged)
+    end
 end
 
 

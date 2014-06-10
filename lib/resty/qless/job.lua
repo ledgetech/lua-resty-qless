@@ -44,7 +44,7 @@ function _M.new(client, atts)
         job[v] = atts[v]
     end
 
-    job.data = cjson_decode(job.data)
+    if job.data then job.data = cjson_decode(job.data) end
     job.__priority = atts.priority
 
     job.expires_at = atts.expires
