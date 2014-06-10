@@ -216,13 +216,13 @@ function _M.untrack(self)
 end
 
 
-function _M.tag(self, tags)
-    return self.client:call("tag", "add", self.jid, unpack(tags))
+function _M.tag(self, ...)
+    return self.client:call("tag", "add", self.jid, ...)
 end
 
 
-function _M.untag(self, tags)
-    return self.client:call("tag", "remove", self.jid, unpack(tags))
+function _M.untag(self, ...)
+    return self.client:call("tag", "remove", self.jid, ...)
 end
 
 
@@ -240,13 +240,13 @@ function _M.retry(self, delay, group, message)
 end
 
 
-function _M.depend(self, jids)
-    return not not self.client:call("depends", self.jid, "on", unpack(jids))
+function _M.depend(self, ...)
+    return not not self.client:call("depends", self.jid, "on", ...)
 end
 
 
-function _M.undepend(self, jids)
-    return not not self.client:call("depends", self.jid, "off", unpack(jids))
+function _M.undepend(self, ...)
+    return not not self.client:call("depends", self.jid, "off", ...)
 end
 
 

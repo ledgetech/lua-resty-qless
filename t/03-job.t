@@ -341,12 +341,36 @@ jobs:0
             local queue = q.queues["queue_9"]
             local jid = queue:put("job_kind_1")
 
-            local tagged = q.jobs:tagged()
+            local tagged = q.jobs:tagged("testtag")
+            ngx.say("total:", tagged.total)
+
+            local job = queue:pop()
+            job:tag("testtag", "testtag2")
+            
+            local tagged = q.jobs:tagged("testtag")
+            ngx.say("total:", tagged.total)
+            
+            local tagged = q.jobs:tagged("testtag2")
+            ngx.say("total:", tagged.total)
+
+            job:untag("testtag2")
+
+            local tagged = q.jobs:tagged("testtag2")
+            ngx.say("total:", tagged.total)
+
+            job:untag("testtag")
+            local tagged = q.jobs:tagged("testtag")
+            ngx.say("total:", tagged.total)
         ';
     }
 --- request
 GET /1
 --- response_body
+total:0
+total:1
+total:1
+total:0
+total:0
 --- no_error_log
 [error]
 [warn]
