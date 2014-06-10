@@ -135,7 +135,7 @@ function _M.put(self, kind, data, options)
         self.name, 
         self.client:generate_jid(), 
         kind, 
-        cjson_encode(data),
+        cjson_encode(data or {}),
         options.delay or 0,
         "priority", options.priority or 0,
         "tags", cjson_encode(options.tags or {}),
