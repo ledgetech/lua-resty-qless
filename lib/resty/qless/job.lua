@@ -207,12 +207,12 @@ end
 
 
 function _M.track(self)
-    return self.client:call("track", self.jid)
+    return self.client:call("track", "track", self.jid)
 end
 
 
 function _M.untrack(self)
-    return self.client:call("untrack", self.jid)
+    return self.client:call("track", "untrack", self.jid)
 end
 
 

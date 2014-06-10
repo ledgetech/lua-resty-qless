@@ -70,14 +70,16 @@ function _jobs.complete(self, offset, count)
 end
 
 
--- TODO: Does this even work?
 function _jobs.tracked(self)
     local res = self.client:call("track")
+    res = cjson_decode(res)
+
     local tracked_jobs = {}
-    for k,v in pairs(res.jobs) do
+    for k,v in pairs(res) do
         tracked_jobs[k] = qless_job.new(self.client, v)
     end
-    return cjson_encode(tracked_jobs)
+    res.jobs = tracked_jobs
+    return res
 end
 
 

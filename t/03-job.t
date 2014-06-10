@@ -195,3 +195,136 @@ ttl:60
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 5: Complete, complete-and-move, then cancel a job
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_6"]
+            local jid = queue:put("job_kind_1")
+
+            local counts = queue:counts()
+            ngx.say("waiting:", counts.waiting)
+            ngx.say("running:", counts.running)
+
+            local job = queue:pop()
+            
+            local counts = queue:counts()
+            ngx.say("waiting:", counts.waiting)
+            ngx.say("running:", counts.running)
+
+            job:complete()
+            
+            local counts = queue:counts()
+            ngx.say("waiting:", counts.waiting)
+            ngx.say("running:", counts.running)
+
+            -- Now do it again, but move completed job
+            -- to the next queue, and include some options (delay).
+            local jid = queue:put("job_kind_2")
+
+            local queue2 = q.queues["queue_7"]
+            local counts2 = queue2:counts()
+            ngx.say("waiting:", counts2.waiting)
+            ngx.say("scheduled:", counts2.scheduled)
+            ngx.say("running:", counts2.running)
+            
+            local job = queue:pop()
+            job:complete("queue_7", { delay = 1 })
+            
+            local counts2 = queue2:counts()
+            ngx.say("waiting:", counts2.waiting)
+            ngx.say("scheduled:", counts2.scheduled)
+            ngx.say("running:", counts2.running)
+
+            ngx.sleep(1)
+            
+            local counts2 = queue2:counts()
+            ngx.say("waiting:", counts2.waiting)
+            ngx.say("scheduled:", counts2.scheduled)
+            ngx.say("running:", counts2.running)
+
+            local job = queue2:pop()
+            job:cancel()
+            
+            local counts2 = queue2:counts()
+            ngx.say("waiting:", counts2.waiting)
+            ngx.say("scheduled:", counts2.scheduled)
+            ngx.say("running:", counts2.running)
+        ';
+    }
+--- request
+GET /1
+--- response_body
+waiting:1
+running:0
+waiting:0
+running:1
+waiting:0
+running:0
+waiting:0
+scheduled:0
+running:0
+waiting:0
+scheduled:1
+running:0
+waiting:1
+scheduled:0
+running:0
+waiting:0
+scheduled:0
+running:0
+--- no_error_log
+[error]
+[warn]
+
+
+=== TEST 6: Track and untrack jobs
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_8"]
+            local jid = queue:put("job_kind_1")
+
+            local tracked = q.jobs:tracked()
+            ngx.say("expired:", table.getn(tracked.expired))
+            ngx.say("jobs:", table.getn(tracked.jobs))
+
+            local job = queue:pop()
+            job:track()
+            
+            local tracked = q.jobs:tracked()
+            ngx.say("expired:", table.getn(tracked.expired))
+            ngx.say("jobs:", table.getn(tracked.jobs))
+
+            ngx.say("jid_match:", tracked.jobs[1].jid == jid)
+
+            job:untrack()
+            
+            local tracked = q.jobs:tracked()
+            ngx.say("expired:", table.getn(tracked.expired))
+            ngx.say("jobs:", table.getn(tracked.jobs))
+        ';
+    }
+--- request
+GET /1
+--- response_body
+expired:0
+jobs:0
+expired:0
+jobs:1
+jid_match:true
+expired:0
+jobs:0
+--- no_error_log
+[error]
+[warn]
