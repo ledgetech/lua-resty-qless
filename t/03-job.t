@@ -361,6 +361,28 @@ jobs:0
             job:untag("testtag")
             local tagged = q.jobs:tagged("testtag")
             ngx.say("total:", tagged.total)
+
+            -- Add tags during put
+
+            local jid = queue:put("job_kind_2", {}, 
+                { tags = { "testtag3", "testtag4" }})
+            
+            local tagged = q.jobs:tagged("testtag3")
+            ngx.say("total:", tagged.total)
+
+
+            -- Test offset and count
+
+            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
+
+            local tagged = q.jobs:tagged("testtag5", 0, 2)
+            ngx.say("total:", table.getn(tagged.jobs))
+
+            local tagged = q.jobs:tagged("testtag5", 3, 2)
+            ngx.say("total:", table.getn(tagged.jobs))
         ';
     }
 --- request
@@ -371,6 +393,9 @@ total:1
 total:1
 total:0
 total:0
+total:1
+total:2
+total:1
 --- no_error_log
 [error]
 [warn]
