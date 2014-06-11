@@ -432,6 +432,7 @@ total:1
             local job2 = q.jobs:get(jid2)
 
             ngx.say("job2_depends_job3:", (job2.dependencies[1] == jid3))
+            ngx.say("job2_depends_count:", table.getn(job2.dependencies))
 
         ';
     }
@@ -441,6 +442,7 @@ GET /1
 job2_depends_job1:true
 job1_dependent_of_job2:true
 job2_depends_job3:true
+job2_depends_count:1
 --- no_error_log
 [error]
 [warn]
