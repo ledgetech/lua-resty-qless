@@ -399,3 +399,48 @@ total:1
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 8: Depend and undepend jobs
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_10"]
+            local jid1 = queue:put("job_kind_1")
+
+            local jid2 = queue:put("job_kind_2", {}, { depends = { jid1 }})
+
+            local job1 = q.jobs:get(jid1)
+            local job2 = q.jobs:get(jid2)
+
+            ngx.say("job2_depends_job1:", job2.dependencies[1] == jid1)
+            ngx.say("job1_dependent_of_job2:", job1.dependents[1] == jid2)
+
+            -- Add dependencies post creation
+
+            local jid3 = queue:put("job_kind_3")
+
+            -- You cant add dependencies to a job not in the "depends" state
+            -- (i.e. already depending on something). Bit odd bit thems the rules.
+
+            job2:depend(jid3)
+            job2:undepend(jid1)
+            local job2 = q.jobs:get(jid2)
+
+            ngx.say("job2_depends_job3:", (job2.dependencies[1] == jid3))
+
+        ';
+    }
+--- request
+GET /1
+--- response_body
+job2_depends_job1:true
+job1_dependent_of_job2:true
+job2_depends_job3:true
+--- no_error_log
+[error]
+[warn]

@@ -200,9 +200,28 @@ function _M.complete(self, next_queue, options)
 end
 
 
+function _M.retry(self, delay, group, message)
+    if not delay then delay = 0 end
+
+    -- TODO: Note state changed
+
+    return self.client:call("retry", 
+        self.jid, 
+        self.queue_name, 
+        self.worker_name, 
+        delay, 
+        group, message)
+end
+
+
 function _M.cancel(self)
     -- TODO: Note state changed
     return self.client:call("cancel", self.jid)
+end
+
+
+function _M.timeout(self)
+    return self.clientL:call("timeout", self.jid)
 end
 
 
@@ -226,32 +245,13 @@ function _M.untag(self, ...)
 end
 
 
-function _M.retry(self, delay, group, message)
-    if not delay then delay = 0 end
-
-    -- TODO: Note state changed
-
-    return self.client:call("retry", 
-        self.jid, 
-        self.queue_name, 
-        self.worker_name, 
-        delay, 
-        group, message)
-end
-
-
 function _M.depend(self, ...)
-    return not not self.client:call("depends", self.jid, "on", ...)
+    return self.client:call("depends", self.jid, "on", ...)
 end
 
 
 function _M.undepend(self, ...)
-    return not not self.client:call("depends", self.jid, "off", ...)
-end
-
-
-function _M.timeout(self)
-    return self.clientL:call("timeout", self.jid)
+    return self.client:call("depends", self.jid, "off", ...)
 end
 
 
