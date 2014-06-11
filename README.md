@@ -12,7 +12,7 @@ James Hurst <james@pintsized.co.uk>
 
 This module is licensed under the 2-clause BSD license.
 
-Copyright (c) 2012, James Hurst <james@pintsized.co.uk>
+Copyright (c) 2014, James Hurst <james@pintsized.co.uk>
 
 All rights reserved.
 
