@@ -446,3 +446,35 @@ job2_depends_count:1
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 9: Log to the job history
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local queue = q.queues["queue_11"]
+            local jid1 = queue:put("job_kind_1")
+
+            local job = q.jobs:get(jid1)
+
+            ngx.say("1_what:", job.raw_queue_history[1].what)
+
+            job:log("captainslog")
+            local job = q.jobs:get(jid1)
+            
+            ngx.say("2_what:", job.raw_queue_history[2].what)
+
+        ';
+    }
+--- request
+GET /1
+--- response_body
+1_what:put
+2_what:captainslog
+--- no_error_log
+[error]
+[warn]

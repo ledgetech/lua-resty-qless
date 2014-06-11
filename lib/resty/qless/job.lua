@@ -257,7 +257,6 @@ end
 
 function _M.log(self, message, data)
     if data then data = cjson_encode(data) end
-
     return self.client:call("log", self.jid, message, data)
 end
 
