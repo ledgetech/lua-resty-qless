@@ -13,10 +13,11 @@ local cjson_decode = cjson.decode
 -- Object for interacting with jobs in different states in the queue. Not meant to be 
 -- instantiated directly, it's accessed via queue.jobs.
 local _queue_jobs = {}
+local _queue_jobs_mt = { __index = _queue_jobs }
 
 
 function _queue_jobs._new(name, client)
-    return setmetatable({ name = name, client = client }, { __index = _queue_jobs })
+    return setmetatable({ name = name, client = client }, _queue_jobs_mt)
 end
 
 
@@ -77,9 +78,9 @@ function _M.new(name, client)
         name = name,
         client = client,
         worker_name = client.worker_name,
+        jobs = _queue_jobs._new(name, client),
     }, mt)
 
-    self.jobs = _queue_jobs._new(self.name, self.client)
     return self
 end
 
