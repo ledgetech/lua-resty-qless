@@ -414,8 +414,7 @@ total:1
 
             local jid2 = queue:put("job_kind_2", {}, { depends = { jid1 }})
 
-            local job1 = q.jobs:get(jid1)
-            local job2 = q.jobs:get(jid2)
+            local job1, job2 = unpack(q.jobs:multiget(jid1, jid2))
 
             ngx.say("job2_depends_job1:", job2.dependencies[1] == jid1)
             ngx.say("job1_dependent_of_job2:", job1.dependents[1] == jid2)

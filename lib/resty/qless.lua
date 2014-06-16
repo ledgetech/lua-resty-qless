@@ -117,8 +117,10 @@ function _jobs.get(self, jid)
 end
 
 
-function _jobs.multiget(self, jids)
-    local res = self.client:call("multiget", jids)
+function _jobs.multiget(self, ...)
+    local res = self.client:call("multiget", ...)
+    ngx_log(ngx_DEBUG, res)
+    res = cjson_decode(res)
     local jobs = {}
     for _,data in ipairs(res) do
         tbl_insert(jobs, qless_job.new(self.client, data))
