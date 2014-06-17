@@ -5,6 +5,7 @@ local cjson = require "cjson"
 local qless_luascript = require "resty.qless.luascript"
 local qless_queue = require "resty.qless.queue"
 local qless_job = require "resty.qless.job"
+local qless_recurring_job = require "resty.qless.recurring_job"
 
 local ngx_var = ngx.var
 local ngx_now = ngx.now
@@ -105,11 +106,11 @@ end
 
 function _jobs.get(self, jid)
     local results = self.client:call("get", jid)
-    if not results then
+    if results == ngx.null then
         -- Perhaps this jid is a recurring job.
         results = self.client:call("recur.get", jid)
         if results then
-            return --qless_recurring_job.new(self.client, results)
+            return qless_recurring_job.new(self.client, cjson_decode(results))
         end
     else
         return qless_job.new(self.client, cjson_decode(results))
@@ -119,7 +120,6 @@ end
 
 function _jobs.multiget(self, ...)
     local res = self.client:call("multiget", ...)
-    ngx_log(ngx_DEBUG, res)
     res = cjson_decode(res)
     local jobs = {}
     for _,data in ipairs(res) do
