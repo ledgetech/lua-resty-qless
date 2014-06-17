@@ -146,19 +146,20 @@ function _M.put(self, kind, data, options)
 end
 
 
-function _M.recur(self, kind, data, options)
+function _M.recur(self, kind, data, interval, options)
     if not options then options = {} end
     return self.client:call(
         "recur",
         self.name,
         self.client:generate_jid(),
         kind,
-        cjson_encode(data),
-        "interval", options.interval, options.offset or 0,
+        cjson_encode(data or {}),
+        "interval", interval, options.offset or 0,
         "priority", options.priority or 0,
         "tags", cjson_encode(options.tags or {}),
         "retries", options.retries or 5,
-        "backlog", options.backlog or 0)
+        "backlog", options.backlog or 0
+    )
 end
 
 
