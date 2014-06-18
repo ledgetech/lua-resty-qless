@@ -35,8 +35,13 @@ __DATA__
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
             local counts = q.queues["queue_1"]:counts()
             ngx.say(counts["paused"])
             ngx.say(counts["running"])
@@ -74,8 +79,13 @@ scheduled one. None will be running.
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             q.queues["queue_1"]:put("job_kind_1")
             q.queues["queue_1"]:put("job_kind_2", { a = 1, b = 2})
@@ -118,8 +128,13 @@ false
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_1"]
 
@@ -157,9 +172,14 @@ false
     location = /1 {
         content_by_lua '
             ngx.sleep(1) -- Wait for our delayed job to become available
+            
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
 
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_1"]
 
@@ -189,8 +209,13 @@ multiple:job_kind_\d
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_1"]
 
@@ -228,8 +253,13 @@ scheduled:0
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_1"]
 

@@ -1,5 +1,4 @@
 local ffi = require "ffi"
-local redis_mod = require "resty.redis"
 local cjson = require "cjson"
 
 local qless_luascript = require "resty.qless.luascript"
@@ -179,41 +178,12 @@ local _M = {
 
 local mt = { __index = _M }
 
-local DEFAULT_PARAMS = {
-    redis_client = nil,
-    redis = {
-        host = "127.0.0.1",
-        port = 6379,
-        connect_timeout = 100,
-        read_timeout = 5000,
-        database = 0,
-    }
-}
 
-
-function _M.new(params)
-    if not params then params = {} end
-    setmetatable(params, { __index = DEFAULT_PARAMS })
-    setmetatable(params.redis, { __index = DEFAULT_PARAMS.redis })
-
-    local redis = params.redis_client
-
-    if not redis then
-        redis = redis_mod:new()
-        redis:set_timeout(params.redis.connect_timeout)
-        local ok, err = redis:connect(params.redis.host, params.redis.port)
-        if not ok then
-            ngx_log(ngx_ERR, err)
-        else
-            redis:select(params.redis.database)
-            redis:set_timeout(params.redis.read_timeout)
-        end
-    end
-
+function _M.new(redis_client)
     local self = setmetatable({ 
-        redis = redis,
+        redis = redis_client,
         worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. random_hex(4),
-        luascript = qless_luascript.new("qless", redis),
+        luascript = qless_luascript.new("qless", redis_client),
     }, mt)
 
     self.workers = _workers.new(self)

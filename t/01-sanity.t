@@ -35,32 +35,13 @@ __DATA__
 --- config
     location = /1 {
         content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
-            ngx.say(cjson.encode(q.queues:counts()))
-        ';
-    }
---- request
-GET /1
---- response_body
-{}
---- no_error_log
-[error]
-[warn]
-
-
-=== TEST 2: Prove we can load using an already established Redis connection.
---- http_config eval: $::HttpConfig
---- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
             local redis = require "resty.redis"
-            local r = redis.new()
-            r:connect("127.0.0.1", redis_params.port)
-            r:select(redis_params.database)
-            
-            local q = qless.new({ redis_client = r })
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
+            local qless = require "resty.qless"
+            local q = qless.new(redis_client)
             ngx.say(cjson.encode(q.queues:counts()))
         ';
     }
@@ -71,3 +52,5 @@ GET /1
 --- no_error_log
 [error]
 [warn]
+
+

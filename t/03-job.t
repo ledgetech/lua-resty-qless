@@ -35,8 +35,13 @@ __DATA__
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local jid = q.queues["queue_2"]:put("job_kind_1", { a = 1, b = 2})
             local job = q.queues["queue_2"]:pop()
@@ -105,8 +110,13 @@ spawned_from:nil
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local jid = q.queues["queue_3"]:put("job_kind_1", 
                 { a = 1 }, 
@@ -140,8 +150,13 @@ tag_1:hello
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_4"]
 
@@ -171,8 +186,13 @@ failed:1
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_5"]
             local jid = queue:put("job_kind_1")
@@ -202,8 +222,13 @@ ttl:60
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_6"]
             local jid = queue:put("job_kind_1")
@@ -289,8 +314,13 @@ running:0
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_8"]
             local jid = queue:put("job_kind_1")
@@ -335,8 +365,13 @@ jobs:0
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_9"]
             local jid = queue:put("job_kind_1")
@@ -406,8 +441,13 @@ total:1
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_10"]
             local jid1 = queue:put("job_kind_1")
@@ -452,8 +492,13 @@ job2_depends_count:1
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local queue = q.queues["queue_11"]
             local jid1 = queue:put("job_kind_1")

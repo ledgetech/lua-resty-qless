@@ -35,8 +35,13 @@ __DATA__
 --- config
     location = /1 {
         content_by_lua '
+            local redis = require "resty.redis"
+            local redis_client = redis.new()
+            redis_client:connect(redis_params.host, redis_params.port)
+            redis_client:select(redis_params.database)
+
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_client)
 
             local jid = q.queues["queue_12"]:recur("job_kind_1", 
                 { a = 1, b = 2}, 
