@@ -109,7 +109,7 @@ function _jobs.get(self, jid)
     if results == ngx.null then
         -- Perhaps this jid is a recurring job.
         results = self.client:call("recur.get", jid)
-        if results then
+            if results ~= ngx.null then
             return qless_recurring_job.new(self.client, cjson_decode(results))
         end
     else
