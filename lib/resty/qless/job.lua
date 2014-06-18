@@ -33,29 +33,28 @@ local mt = {
 
 
 function _M.new(client, atts)
-    local job = {
+    return setmetatable({
         client = client,
-    }
+        jid = atts.jid,
+        data = cjson_decode(atts.data or "{}"),
+        tags = atts.tags,
+        state = atts.state,
+        tracked = atts.tracked,
+        failure = atts.failure,
+        dependencies = atts.dependencies,
+        dependents = atts.dependents,
+        spawned_from_jid = atts.spawned_from_jid,
 
-    local map = { "jid", "data", "tags", "state", "tracked",
-        "failure", "dependencies", "dependents", "spawned_from_jid" }
+        __priority = atts.priority, -- Accessed via metatable setter/getter
 
-    for _,v in ipairs(map) do
-        job[v] = atts[v]
-    end
-
-    if job.data then job.data = cjson_decode(job.data) end
-    job.__priority = atts.priority
-
-    job.expires_at = atts.expires
-    job.worker_name = atts.worker
-    job.kind = atts.klass
-    job.queue_name = atts.queue
-    job.original_retries = atts.retries
-    job.retries_left = atts.remaining
-    job.raw_queue_history = atts.history
-
-    return setmetatable(job, mt)
+        expires_at = atts.expires,
+        worker_name = atts.worker,
+        kind = atts.klass,
+        queue_name = atts.queue,
+        original_retries = atts.retries,
+        retries_left = atts.remaining,
+        raw_queue_history = atts.history,
+    }, mt)
 end
 
 
