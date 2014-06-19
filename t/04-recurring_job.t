@@ -39,9 +39,14 @@ __DATA__
             local q = qless.new({ redis = redis_params })
 
             local jid = q.queues["queue_12"]:recur("job_kind_1", 
-                { a = 1, b = 2}, 
-                10,
-                { priority = 2 }
+                { a = 1, b = 2 }, 
+                10, 
+                { 
+                    priority = 2,
+                    tags = {
+                        "recurringtag1",
+                    },
+                }
             )
             local job = q.jobs:get(jid)
 
@@ -62,17 +67,13 @@ __DATA__
             ngx.say("queue_13_count:", counts.recurring)
 
             -- Tag
-            ngx.say("tag:", job.tags[1])
-            job:tag("recurringtesttag")
-            
+            ngx.say("tag1:", job.tags[1])
+
+            job:tag("recurringtag2")
             local job = q.jobs:get(jid)
-            ngx.say("tag:", job.tags[1])
 
-            -- TODO: This will return nil because recurring jobs dont
-            -- turn up. So fix this if/when qless-core gets fixed.
-            local tagged = q.jobs:tagged("recurringtesttag")
-            ngx.say("tagged:", table.getn(tagged))
-
+            ngx.say("tag2:", job.tags[2])
+            
             job:cancel()
 
             local job = q.jobs:get(jid)
@@ -90,9 +91,8 @@ interval:10
 priority:2
 queue_13_count:0
 queue_13_count:1
-tag:nil
-tag:recurringtesttag
-tagged:0
+tag1:recurringtag1
+tag2:recurringtag2
 job_cancelled:true
 
 --- no_error_log
