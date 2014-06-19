@@ -18,14 +18,6 @@ local _M = {
 
 local mt = { __index = _M }
 
-local DEFAULT_REDIS_PARAMS = {
-    host = "127.0.0.1",
-    port = 6379,
-    connect_timeout = 100,
-    read_timeout = 5000,
-    database = 0,
-}
-
 local DEFAULT_OPTIONS = {
     concurrency = 1,
     interval = 10,
@@ -35,10 +27,7 @@ local DEFAULT_OPTIONS = {
 
 
 function _M.new(params)
-    if not params then params = {} end
-    setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
-
-    return setmetatable({ }, mt)
+    return setmetatable({ params = params or {} }, mt)
 end
 
 
@@ -50,8 +39,8 @@ function _M.start(self, work, options, around)
             if around and around.before and type(around.before) == "function" then
                 around.before()
             end
-    
-            local q = qless.new(self.redis_client)
+
+            local q = qless.new(self.params)
             local queue = q.queues[options.queues[1]]
 
             repeat
@@ -90,7 +79,7 @@ end
 
 
 function _M.set_redis_client(self, client)
-    self.redis_client = client
+    self.params.redis_client = client
 end
 
 
