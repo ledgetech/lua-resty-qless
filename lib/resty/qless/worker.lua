@@ -26,27 +26,25 @@ local DEFAULT_OPTIONS = {
 }
 
 
-function _M.new(params)
-    return setmetatable({ params = params or {} }, mt)
+function _M.new(redis_params )
+    return setmetatable({
+        redis_params = redis_params,
+    }, mt)
 end
 
 
-function _M.start(self, work, options, around)
-    setmetatable(options, { __index = DEFAULT_OPTIONS })
+function _M.start(self, options)
+    local options = setmetatable(options, { __index = DEFAULT_OPTIONS })
 
     local function worker(premature)
         if not premature then
-            if around and around.before and type(around.before) == "function" then
-                around.before()
-            end
-
-            local q = qless.new(self.params)
+            local q = qless.new({ redis = self.redis_params })
             local queue = q.queues[options.queues[1]]
 
             repeat
                 local job = queue:pop()
                 if job then
-                    local res, err_type, err = job:perform(work)
+                    local res, err_type, err = job:perform()
                     if res == true then
                         job:complete()
                     else
@@ -58,10 +56,6 @@ function _M.start(self, work, options, around)
 
             q:deregister_workers({ q.worker_name })
             
-            if around and around.after and type(around.after) == "function" then
-                around.after()
-            end
-
             local ok, err = ngx_timer_at(options.interval, worker)
             if not ok then
                 ngx_log(ngx_ERR, "failed to run worker: ", err)

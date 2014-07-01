@@ -186,6 +186,8 @@ local DEFAULT_PARAMS = {
         port = 6379,
         connect_timeout = 100,
         read_timeout = 5000,
+        keepalive_timeout = nil,
+        keepalive_poolsize = nil,
         database = 0,
     }
 }
@@ -221,6 +223,11 @@ function _M.new(params)
     self.jobs = _jobs.new(self)
 
     return self
+end
+
+
+function _M.redis_close(self)
+    self.redis:set_keepalive() 
 end
 
 

@@ -91,19 +91,25 @@ function _M.queue(self)
 end
 
 
-function _M.perform(self, work)
-    local func = work[self.kind]
-    if func and func.perform and type(func.perform) == "function" then
-        local res, err = func.perform(self.data)
-        if not res then
-            return nil, "failed-" .. self.queue_name, "'" .. self.kind .. "' " .. err or ""
+function _M.perform(self)
+    local ok, task = pcall(require, self.kind)
+    if ok then
+        if task.perform and type(task.perform) == "function" then
+            local res, err = task.perform(self.data)
+            if not res then
+                return nil, "failed-" .. self.queue_name, "'" .. self.kind .. "' " .. (err or "")
+            else
+                return true
+            end
         else
-            return true
+            return nil, 
+                self.queue_name .. "-invalid-task", 
+                "Job '" .. self.kind .. "' has no perform function"
         end
     else
         return nil, 
-            self.queue_name .. "-invalid-job-spec", 
-            "Job '" .. self.kind .. "' doesn't exist or has no perform function"
+            self.queue_name .. "-invalid-task", 
+            "Module '" .. self.kind .. "' could not be found"
     end
 end
 
