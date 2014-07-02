@@ -9,6 +9,10 @@ local ngx_now = ngx.now
 local ngx_timer_at = ngx.timer.at
 local cjson_encode = cjson.encode
 local cjson_decode = cjson.decode
+local tbl_insert = table.insert
+local co_create = coroutine.create
+local co_status = coroutine.status
+local co_resume = coroutine.resume
 local co_yield = coroutine.yield
 
 
@@ -29,6 +33,7 @@ local DEFAULT_OPTIONS = {
 function _M.new(redis_params )
     return setmetatable({
         redis_params = redis_params,
+        middleware = nil,
     }, mt)
 end
 
@@ -44,7 +49,7 @@ function _M.start(self, options)
             repeat
                 local job = queue:pop()
                 if job then
-                    local res, err_type, err = job:perform()
+                    local res, err_type, err = self:perform(job)
                     if res == true then
                         job:complete()
                     else
@@ -69,6 +74,25 @@ function _M.start(self, options)
             ngx_log(ngx_ERR, "failed to start worker: ", err)
         end
     end
+end
+
+
+function _M.perform(self, job)
+    local res, err_type, err
+    if self.middleware and type(self.middleware) == "function" then
+        local mw = co_create(self.middleware)
+        co_resume(mw)
+
+        res, err_type, err = job:perform()
+
+        if co_status(mw) == "suspended" then
+            co_resume(mw)
+        end
+    else
+        res, err_type, err = job:perform()
+    end
+
+    return res, err_type, err
 end
 
 

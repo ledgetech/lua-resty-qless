@@ -3,7 +3,7 @@
 use Test::Nginx::Socket;
 use Cwd qw(cwd);
 
-plan tests => repeat_each() * (blocks() * 3);
+plan tests => repeat_each() * (blocks() * 3) + 2;
 
 my $pwd = cwd();
 
@@ -54,6 +54,23 @@ our $HttpConfig = qq{
             reserver = "ordered",
             queues = { "queue_14" },
         }) 
+
+
+        local worker_mw = Qless_Worker.new({
+            host = redis_params.host,
+            port = redis_params.port,
+            database = redis_params.database,
+        })
+
+        worker_mw.middleware = function()
+            ngx.log(ngx.NOTICE, "Middleware start")
+            coroutine.yield()
+            ngx.log(ngx.NOTICE, "Middleware stop")
+        end
+
+        worker_mw:start({
+            queues = { "queue_15" },
+        })
     ';
 };
 
@@ -84,5 +101,30 @@ GET /1
 complete
 --- error_log eval
 [qr/Sum: 10/]
+
+
+=== TEST 2: Test middleware runs before and after job
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local jid = q.queues["queue_15"]:put("testtasks.sum", { 1, 2, 3, 4 })
+            ngx.sleep(1)
+
+            local job = q.jobs:get(jid)
+            ngx.say(job.state)
+        ';
+    }
+--- request
+GET /1
+--- response_body
+complete
+--- error_log eval
+[qr/Sum: 10/,
+qr/Middleware stop/,
+qr/Middleware start/]
 
 
