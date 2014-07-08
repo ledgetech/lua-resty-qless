@@ -96,9 +96,4 @@ function _M.perform(self, job)
 end
 
 
-function _M.set_redis_client(self, client)
-    self.params.redis_client = client
-end
-
-
 return _M
