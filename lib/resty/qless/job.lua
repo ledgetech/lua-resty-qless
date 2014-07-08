@@ -49,7 +49,7 @@ function _M.new(client, atts)
 
         expires_at = atts.expires,
         worker_name = atts.worker,
-        kind = atts.klass,
+        klass = atts.klass,
         queue_name = atts.queue,
         original_retries = atts.retries,
         retries_left = atts.remaining,
@@ -59,12 +59,12 @@ end
 
 
 -- For building a job from attribute data, without the roundtrip to redis.
-function _M.build(client, kind, atts)
+function _M.build(client, klass, atts)
     local defaults = {
         jid              = client:generate_jid(),
         spawned_from_jid = nil,
         data             = {},
-        klass            = kind,
+        klass            = klass,
         priority         = 0,
         tags             = {},
         worker           = 'mock_worker',
@@ -92,30 +92,30 @@ end
 
 
 function _M.perform(self)
-    local ok, task = pcall(require, self.kind)
+    local ok, task = pcall(require, self.klass)
     if ok then
         if task.perform and type(task.perform) == "function" then
             local res, err = task.perform(self.data)
             if not res then
-                return nil, "failed-" .. self.queue_name, "'" .. self.kind .. "' " .. (err or "")
+                return nil, "failed-" .. self.queue_name, "'" .. self.klass .. "' " .. (err or "")
             else
                 return true
             end
         else
             return nil, 
                 self.queue_name .. "-invalid-task", 
-                "Job '" .. self.kind .. "' has no perform function"
+                "Job '" .. self.klass .. "' has no perform function"
         end
     else
         return nil, 
             self.queue_name .. "-invalid-task", 
-            "Module '" .. self.kind .. "' could not be found"
+            "Module '" .. self.klass .. "' could not be found"
     end
 end
 
 
 function _M.description(self)
-    return self.kind .. " (" .. self.jid .. " / " .. self.queue_name .. " / " .. self.state .. ")"
+    return self.klass .. " (" .. self.jid .. " / " .. self.queue_name .. " / " .. self.state .. ")"
 end
 
 
@@ -137,7 +137,7 @@ function _M.move(self, queue, options)
     if not options then options = {} end
 
     -- TODO: Note state changed
-    return self.client:call("put", self.client.worker_name, queue, self.jid, self.kind,
+    return self.client:call("put", self.client.worker_name, queue, self.jid, self.klass,
         cjson_encode(options.data or self.data),
         options.delay or 0,
         "priority", options.priority or self.priority,

@@ -38,7 +38,7 @@ __DATA__
             local qless = require "resty.qless"
             local q = qless.new({ redis = redis_params })
 
-            local jid = q.queues["queue_2"]:put("job_kind_1", { a = 1, b = 2})
+            local jid = q.queues["queue_2"]:put("job_klass_1", { a = 1, b = 2})
             local job = q.queues["queue_2"]:pop()
 
             ngx.say("jid_match:", jid == job.jid)
@@ -59,7 +59,7 @@ __DATA__
 
             ngx.say("expires_at:", job.expires_at)
             ngx.say("worker_name_match:", q.worker_name == job.worker_name)
-            ngx.say("kind:", job.kind)
+            ngx.say("klass:", job.klass)
             ngx.say("queue_name:", job.queue_name)
             ngx.say("original_retries:", job.retries)
             ngx.say("retries_left:", job.retries_left)
@@ -87,12 +87,12 @@ priority:0
 priority:10
 expires_at:[\d\.]+
 worker_name_match:true
-kind:job_kind_1
+klass:job_klass_1
 queue_name:queue_2
 original_retries:nil
 retries_left:5
 raw_queue_history_1_q:queue_2
-description:job_kind_1 \([a-z0-9]+ / queue_2 / running\)
+description:job_klass_1 \([a-z0-9]+ / queue_2 / running\)
 ttl:60
 spawned_from:nil
 --- no_error_log
@@ -108,7 +108,7 @@ spawned_from:nil
             local qless = require "resty.qless"
             local q = qless.new({ redis = redis_params })
 
-            local jid = q.queues["queue_3"]:put("job_kind_1", 
+            local jid = q.queues["queue_3"]:put("job_klass_1", 
                 { a = 1 }, 
                 { priority = 5, tags = { "hello"} }
             )
@@ -148,7 +148,7 @@ tag_1:hello
             local failed = q.jobs:failed()
             ngx.say("failed:", failed["failed-jobs"])
 
-            local jid = queue:put("job_kind_1")
+            local jid = queue:put("job_klass_1")
             local job = queue:pop()
             job:fail("failed-jobs", "testing")
 
@@ -175,7 +175,7 @@ failed:1
             local q = qless.new({ redis = redis_params })
 
             local queue = q.queues["queue_5"]
-            local jid = queue:put("job_kind_1")
+            local jid = queue:put("job_klass_1")
 
 
             local job = queue:pop()
@@ -206,7 +206,7 @@ ttl:60
             local q = qless.new({ redis = redis_params })
 
             local queue = q.queues["queue_6"]
-            local jid = queue:put("job_kind_1")
+            local jid = queue:put("job_klass_1")
 
             local counts = queue:counts()
             ngx.say("waiting:", counts.waiting)
@@ -226,7 +226,7 @@ ttl:60
 
             -- Now do it again, but move completed job
             -- to the next queue, and include some options (delay).
-            local jid = queue:put("job_kind_2")
+            local jid = queue:put("job_klass_2")
 
             local queue2 = q.queues["queue_7"]
             local counts2 = queue2:counts()
@@ -293,7 +293,7 @@ running:0
             local q = qless.new({ redis = redis_params })
 
             local queue = q.queues["queue_8"]
-            local jid = queue:put("job_kind_1")
+            local jid = queue:put("job_klass_1")
 
             local tracked = q.jobs:tracked()
             ngx.say("expired:", table.getn(tracked.expired))
@@ -339,7 +339,7 @@ jobs:0
             local q = qless.new({ redis = redis_params })
 
             local queue = q.queues["queue_9"]
-            local jid = queue:put("job_kind_1")
+            local jid = queue:put("job_klass_1")
 
             local tagged = q.jobs:tagged("testtag")
             ngx.say("total:", tagged.total)
@@ -364,7 +364,7 @@ jobs:0
 
             -- Add tags during put
 
-            local jid = queue:put("job_kind_2", {}, 
+            local jid = queue:put("job_klass_2", {}, 
                 { tags = { "testtag3", "testtag4" }})
             
             local tagged = q.jobs:tagged("testtag3")
@@ -373,10 +373,10 @@ jobs:0
 
             -- Test offset and count
 
-            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
-            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
-            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
-            local jid = queue:put("job_kind_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_klass_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_klass_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_klass_2", {}, { tags = { "testtag5" }})
+            local jid = queue:put("job_klass_2", {}, { tags = { "testtag5" }})
 
             local tagged = q.jobs:tagged("testtag5", 0, 2)
             ngx.say("total:", table.getn(tagged.jobs))
@@ -410,9 +410,9 @@ total:1
             local q = qless.new({ redis = redis_params })
 
             local queue = q.queues["queue_10"]
-            local jid1 = queue:put("job_kind_1")
+            local jid1 = queue:put("job_klass_1")
 
-            local jid2 = queue:put("job_kind_2", {}, { depends = { jid1 }})
+            local jid2 = queue:put("job_klass_2", {}, { depends = { jid1 }})
 
             local job1, job2 = unpack(q.jobs:multiget(jid1, jid2))
 
@@ -421,7 +421,7 @@ total:1
 
             -- Add dependencies post creation
 
-            local jid3 = queue:put("job_kind_3")
+            local jid3 = queue:put("job_klass_3")
 
             -- You cant add dependencies to a job not in the "depends" state
             -- (i.e. already depending on something). Bit odd bit thems the rules.
@@ -456,7 +456,7 @@ job2_depends_count:1
             local q = qless.new({ redis = redis_params })
 
             local queue = q.queues["queue_11"]
-            local jid1 = queue:put("job_kind_1")
+            local jid1 = queue:put("job_klass_1")
 
             local job = q.jobs:get(jid1)
 

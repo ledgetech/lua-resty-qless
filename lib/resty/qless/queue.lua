@@ -128,14 +128,14 @@ function _M.unpause(self)
 end
 
 
-function _M.put(self, kind, data, options)
+function _M.put(self, klass, data, options)
     if not options then options = {} end
     return self.client:call(
         "put", 
         self.worker_name, 
         self.name, 
         self.client:generate_jid(), 
-        kind, 
+        klass, 
         cjson_encode(data or {}),
         options.delay or 0,
         "priority", options.priority or 0,
@@ -146,13 +146,13 @@ function _M.put(self, kind, data, options)
 end
 
 
-function _M.recur(self, kind, data, interval, options)
+function _M.recur(self, klass, data, interval, options)
     if not options then options = {} end
     return self.client:call(
         "recur",
         self.name,
         self.client:generate_jid(),
-        kind,
+        klass,
         cjson_encode(data or {}),
         "interval", interval, options.offset or 0,
         "priority", options.priority or 0,

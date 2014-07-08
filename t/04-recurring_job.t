@@ -38,7 +38,7 @@ __DATA__
             local qless = require "resty.qless"
             local q = qless.new({ redis = redis_params })
 
-            local jid = q.queues["queue_12"]:recur("job_kind_1", 
+            local jid = q.queues["queue_12"]:recur("job_klass_1", 
                 { a = 1, b = 2 }, 
                 10, 
                 { 
@@ -84,7 +84,7 @@ __DATA__
 GET /1
 --- response_body
 jid_match:true
-klass_name:job_kind_1
+klass_name:job_klass_1
 data_a:1
 data_b:2
 interval:10

@@ -77,11 +77,11 @@ scheduled one. None will be running.
             local qless = require "resty.qless"
             local q = qless.new({ redis = redis_params })
 
-            q.queues["queue_1"]:put("job_kind_1")
-            q.queues["queue_1"]:put("job_kind_2", { a = 1, b = 2})
-            local delayed_jid = q.queues["queue_1"]:put("job_kind_3", 
+            q.queues["queue_1"]:put("job_klass_1")
+            q.queues["queue_1"]:put("job_klass_2", { a = 1, b = 2})
+            local delayed_jid = q.queues["queue_1"]:put("job_klass_3", 
                 { a = 1 }, { delay = 1}) 
-            q.queues["queue_1"]:put("job_kind_4", {}, { depends = { delayed_jid }})
+            q.queues["queue_1"]:put("job_klass_4", {}, { depends = { delayed_jid }})
 
             local counts = q.queues["queue_1"]:counts()
             ngx.say(counts["paused"])
@@ -164,21 +164,21 @@ false
             local queue = q.queues["queue_1"]
 
             local job1 = queue:peek()
-            ngx.say("single:", job1.kind)
+            ngx.say("single:", job1.klass)
 
             local jobs23 = queue:peek(3)
             for _,v in ipairs(jobs23) do
-                ngx.say("multiple:", v.kind)
+                ngx.say("multiple:", v.klass)
             end
         ';
     }
 --- request
 GET /1
 --- response_body_like
-single:job_kind_\d
-multiple:job_kind_\d
-multiple:job_kind_\d
-multiple:job_kind_\d
+single:job_klass_\d
+multiple:job_klass_\d
+multiple:job_klass_\d
+multiple:job_klass_\d
 --- no_error_log
 [error]
 [warn]
