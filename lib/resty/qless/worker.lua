@@ -44,10 +44,22 @@ function _M.start(self, options)
     local function worker(premature)
         if not premature then
             local q = qless.new({ redis = self.redis_params })
-            local queue = q.queues[options.queues[1]]
+
+            local ok, reserver_type = pcall(require, "resty.qless.reserver." .. options.reserver)
+            if not ok then
+                ngx_log(ngx_ERR, "No such reserver: ", options.reserver, " - ", reserver_type)
+                return nil
+            end
+
+            local queues = {}
+            for i,v in ipairs(options.queues) do
+                tbl_insert(queues, q.queues[v])
+            end
+
+            local reserver = reserver_type.new(queues)
 
             repeat
-                local job = queue:pop()
+                local job = reserver:reserve()
                 if job then
                     local res, err_type, err = self:perform(job)
                     if res == true then
