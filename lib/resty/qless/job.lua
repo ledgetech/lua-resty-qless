@@ -27,6 +27,8 @@ local mt = {
     __newindex = function(t, k, v)
         if k == "priority" then
             return rawset(t, "__priority", t.client:call("priority", t.jid, v))
+        else
+            return rawset(t, k, v)
         end
     end,
 }
@@ -54,6 +56,8 @@ function _M.new(client, atts)
         original_retries = atts.retries,
         retries_left = atts.remaining,
         raw_queue_history = atts.history,
+
+        state_changed = false,
     }, mt)
 end
 
@@ -133,11 +137,11 @@ function _M.spawned_from(self)
 end
 
 
-function _M.move(self, queue, options)
+function _M.requeue(self, queue, options)
     if not options then options = {} end
 
-    -- TODO: Note state changed
-    return self.client:call("put", self.client.worker_name, queue, self.jid, self.klass,
+    self:begin_state_change("requeue")
+    local res = self.client:call("requeue", self.client.worker_name, queue, self.jid, self.klass,
         cjson_encode(options.data or self.data),
         options.delay or 0,
         "priority", options.priority or self.priority,
@@ -145,11 +149,14 @@ function _M.move(self, queue, options)
         "retries", options.retries or self.original_retries,
         "depends", cjson_encode(options.depends or self.dependencies)
     )     
+    self:finish_state_change("requeue")
+    return res
 end
+_M.move = _M.requeue -- Old versions of qless previoulsly used 'move'
 
 
 function _M.fail(self, group, message)
-    -- TODO: Note state changed
+    self:begin_state_change("fail")
     local res, err = self.client:call("fail", 
         self.jid, 
         self.client.worker_name,
@@ -160,6 +167,7 @@ function _M.fail(self, group, message)
         ngx_log(ngx_ERR, "Could not fail job: ", err)
         return false
     end
+    self:finish_state_change("fail")
 
     return true
 end
@@ -179,6 +187,7 @@ end
 function _M.complete(self, next_queue, options)
     if not options then options = {} end
 
+    self:begin_state_change("complete")
     local res, err
     if next_queue then
         res, err = self.client:call("complete",
@@ -200,6 +209,7 @@ function _M.complete(self, next_queue, options)
     end
 
     if not res then ngx_log(ngx_ERR, err) end
+    self:finish_state_change("complete")
 
     return res, err
 end
@@ -208,25 +218,28 @@ end
 function _M.retry(self, delay, group, message)
     if not delay then delay = 0 end
 
-    -- TODO: Note state changed
-
-    return self.client:call("retry", 
-        self.jid, 
-        self.queue_name, 
-        self.worker_name, 
-        delay, 
+    self:begin_state_change("retry")
+    local res = self.client:call("retry", 
+        self.jid,
+        self.queue_name,
+        self.worker_name,
+        delay,
         group, message)
+    self:end_state_change("retry")
+    return res
 end
 
 
 function _M.cancel(self)
-    -- TODO: Note state changed
-    return self.client:call("cancel", self.jid)
+    self:begin_state_change("cancel")
+    local res = self.client:call("cancel", self.jid)
+    self:finish_state_change("cancel")
+    return res
 end
 
 
 function _M.timeout(self)
-    return self.clientL:call("timeout", self.jid)
+    return self.client:call("timeout", self.jid)
 end
 
 
@@ -266,14 +279,21 @@ function _M.log(self, message, data)
 end
 
 
---[[
-TODO: fail, complete, cancel, move, retry before / after callbacks
-]]--
-
-
-function _M.note_state_changed(self, event)
-    -- TODO
+function _M.begin_state_change(self, event)
+    local before = self["before_" .. event]
+    if before and type(before) == "function" then
+        before()
+    end
 end
 
+
+function _M.finish_state_change(self, event)
+    self.state_changed = true
+
+    local after = self["after_" .. event]
+    if after and type(after) == "function" then
+        after()
+    end
+end
 
 return _M

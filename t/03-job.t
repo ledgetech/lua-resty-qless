@@ -82,7 +82,7 @@ tracked:false
 failure:table:0
 dependencies:table:0
 dependents:table:0
-spawned_from_jid:nil
+spawned_from_jid:false
 priority:0
 priority:10
 expires_at:[\d\.]+
@@ -114,6 +114,17 @@ spawned_from:nil
             )
 
             local job = q.queues["queue_3"]:pop()
+
+            local before_triggered = false
+            job.before_requeue = function()
+                before_triggered = true
+            end
+
+            local after_triggered = false
+            job.after_requeue = function() 
+                after_triggered = true
+            end
+
             job:move("queue_4")
             job = q.queues["queue_4"]:pop()
 
@@ -121,6 +132,8 @@ spawned_from:nil
             ngx.say("data_a:", job.data.a)
             ngx.say("priority:", job.priority)
             ngx.say("tag_1:", job.tags[1])
+            ngx.say("before_triggered:", before_triggered)
+            ngx.say("after_triggered:", after_triggered)
         ';
     }
 --- request
@@ -130,6 +143,8 @@ jid_match:true
 data_a:1
 priority:5
 tag_1:hello
+before_triggered:true
+after_triggered:true
 --- no_error_log
 [error]
 [warn]
@@ -150,10 +165,24 @@ tag_1:hello
 
             local jid = queue:put("job_klass_1")
             local job = queue:pop()
+
+            local before_triggered = false
+            job.before_fail = function()
+                before_triggered = true
+            end
+
+            local after_triggered = false
+            job.after_fail = function()
+                after_triggered = true
+            end
+
             job:fail("failed-jobs", "testing")
 
             local failed = q.jobs:failed()
             ngx.say("failed:", failed["failed-jobs"])
+
+            ngx.say("before_triggered:", before_triggered)
+            ngx.say("after_triggered:", after_triggered)
         ';
     }
 --- request
@@ -161,6 +190,8 @@ GET /1
 --- response_body
 failed:nil
 failed:1
+before_triggered:true
+after_triggered:true
 --- no_error_log
 [error]
 [warn]
@@ -213,6 +244,16 @@ ttl:60
             ngx.say("running:", counts.running)
 
             local job = queue:pop()
+
+            local before_complete_triggered = false
+            job.before_complete = function()
+                before_complete_triggered = true
+            end
+
+            local after_complete_triggered = false
+            job.after_complete = function()
+                after_complete_triggered = true
+            end
             
             local counts = queue:counts()
             ngx.say("waiting:", counts.waiting)
@@ -223,6 +264,9 @@ ttl:60
             local counts = queue:counts()
             ngx.say("waiting:", counts.waiting)
             ngx.say("running:", counts.running)
+
+            ngx.say("before_complete_triggered:", before_complete_triggered)
+            ngx.say("after_complete_triggered:", after_complete_triggered)
 
             -- Now do it again, but move completed job
             -- to the next queue, and include some options (delay).
@@ -250,12 +294,26 @@ ttl:60
             ngx.say("running:", counts2.running)
 
             local job = queue2:pop()
+
+            local before_cancel_triggered = false
+            job.before_cancel = function()
+                before_cancel_triggered = true
+            end
+
+            local after_cancel_triggered = false
+            job.after_cancel = function()
+                after_cancel_triggered = true
+            end
+
             job:cancel()
             
             local counts2 = queue2:counts()
             ngx.say("waiting:", counts2.waiting)
             ngx.say("scheduled:", counts2.scheduled)
             ngx.say("running:", counts2.running)
+
+            ngx.say("before_cancel_triggered:", before_cancel_triggered)
+            ngx.say("after_cancel_triggered:", after_cancel_triggered)
         ';
     }
 --- request
@@ -267,6 +325,8 @@ waiting:0
 running:1
 waiting:0
 running:0
+before_complete_triggered:true
+after_complete_triggered:true
 waiting:0
 scheduled:0
 running:0
@@ -279,6 +339,8 @@ running:0
 waiting:0
 scheduled:0
 running:0
+before_cancel_triggered:true
+after_cancel_triggered:true
 --- no_error_log
 [error]
 [warn]
