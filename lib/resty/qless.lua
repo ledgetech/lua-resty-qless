@@ -245,6 +245,27 @@ function _M.call(self, command, ...)
 end
 
 
+function _M.config_set(self, k, v)
+    return self:call("config.set", k, v)
+end
+
+
+function _M.config_get(self, k)
+    return self:call("config.get", k)
+end
+
+
+function _M.config_get_all(self)
+    local res, err = self:call("config.get")
+    return cjson_decode(res)
+end
+
+
+function _M.config_clear(self, k)
+    return self:call("config.unset", k)
+end
+
+
 function _M.track(self, jid)
     return self:call("track", "track", jid)
 end

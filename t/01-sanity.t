@@ -71,3 +71,43 @@ GET /1
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 3: Set / get / clear config.
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new({ redis = redis_params })
+
+            local all = q:config_get_all()
+
+            -- We can get options from all
+            ngx.say(all["heartbeat"])
+            ngx.say(all["grace-period"])
+
+            -- They match individual calls to get
+            ngx.say(q:config_get("heartbeat") == all["heartbeat"])
+
+            -- We can change them
+            q:config_set("heartbeat", 30)
+            local heartbeat = q:config_get("heartbeat")
+            ngx.say(heartbeat)
+
+            -- We can reset them to defaults
+            q:config_clear("heartbeat")
+            ngx.say(q:config_get("heartbeat") == all["heartbeat"])
+        ';
+    }
+--- request
+GET /1
+--- response_body_like
+\d+
+\d+
+true
+30
+true
+--- no_error_log
+[error]
+[warn]
