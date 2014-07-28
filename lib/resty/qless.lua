@@ -21,6 +21,9 @@ local C = ffi.C
 local cjson_encode = cjson.encode
 local cjson_decode = cjson.decode
 local tbl_insert = table.insert
+local tbl_concat = table.concat
+local str_sub = string.sub
+local str_len = string.len
 
 
 ffi_cdef[[
@@ -172,6 +175,42 @@ function _queues.counts(self)
 end
 
 
+-- Events, to be accessed via qless.events etc.
+local _events = {}
+local _events_mt = { __index = _events }
+
+
+function _events.new(redis)
+    return setmetatable({
+        redis = redis,
+    }, _events_mt)
+end
+
+
+function _events.listen(self, events, callback)
+    local ql_ns = "ql:"
+    for i, ev in ipairs(events) do
+        local ok, err = self.redis:subscribe(ql_ns .. ev)
+        if not ok then ngx_log(ngx_ERR, err) end
+    end
+
+    repeat
+        local reply, err = self.redis:read_reply()
+        if not reply then
+            ngx_log(ngx_ERR, err)
+        else
+            local channel = str_sub(reply[2], str_len(ql_ns) + 1)
+            local message = reply[3]
+            callback(channel, message)
+        end
+    until not reply
+end
+
+
+function _events.stop(self)
+    return self.redis:unsubscribe()
+end
+
 
 local _M = {
     _VERSION = '0.01',
@@ -221,6 +260,18 @@ function _M.new(params)
     self.workers = _workers.new(self)
     self.queues = _queues.new(self)
     self.jobs = _jobs.new(self)
+
+
+    local sub_redis = redis_mod:new()
+    sub_redis:set_timeout(params.redis.connect_timeout)
+    local ok, err = sub_redis:connect(params.redis.host, params.redis.port)
+    if not ok then
+        ngx_log(ngx_ERR, err)
+    else
+        sub_redis:select(params.redis.database)
+        sub_redis:set_timeout(10000)
+    end
+    self.events = _events.new(sub_redis)
 
     return self
 end
