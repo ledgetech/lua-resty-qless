@@ -36,7 +36,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_12"]:recur("job_klass_1", 
                 { a = 1, b = 2 }, 

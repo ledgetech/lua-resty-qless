@@ -219,35 +219,30 @@ local _M = {
 local mt = { __index = _M }
 
 local DEFAULT_PARAMS = {
-    redis_client = nil,
-    redis = {
-        host = "127.0.0.1",
-        port = 6379,
-        connect_timeout = 100,
-        read_timeout = 5000,
-        keepalive_timeout = nil,
-        keepalive_poolsize = nil,
-        database = 0,
-    }
+    redis = nil, -- Used for passing an already established connection
+    host = "127.0.0.1",
+    port = 6379,
+    connect_timeout = 100,
+    read_timeout = 5000,
+    keepalive_timeout = nil,
+    keepalive_poolsize = nil,
 }
 
 
 function _M.new(params)
     if not params then params = {} end
     setmetatable(params, { __index = DEFAULT_PARAMS })
-    setmetatable(params.redis, { __index = DEFAULT_PARAMS.redis })
 
-    local redis = params.redis_client
-
+    local redis = params.redis
     if not redis then
         redis = redis_mod:new()
-        redis:set_timeout(params.redis.connect_timeout)
-        local ok, err = redis:connect(params.redis.host, params.redis.port)
+        redis:set_timeout(params.connect_timeout)
+        local ok, err = redis:connect(params.host, params.port)
         if not ok then
             ngx_log(ngx_ERR, err)
         else
-            redis:select(params.redis.database)
-            redis:set_timeout(params.redis.read_timeout)
+            redis:select(params.database)
+            redis:set_timeout(params.read_timeout)
         end
     end
 
@@ -261,17 +256,17 @@ function _M.new(params)
     self.queues = _queues.new(self)
     self.jobs = _jobs.new(self)
 
-
-    local sub_redis = redis_mod:new()
-    sub_redis:set_timeout(params.redis.connect_timeout)
-    local ok, err = sub_redis:connect(params.redis.host, params.redis.port)
+    -- Pub/sub-y commands need their own connection
+    local pubsub_redis = redis_mod:new()
+    pubsub_redis:set_timeout(params.connect_timeout)
+    local ok, err = pubsub_redis:connect(params.host, params.port)
     if not ok then
         ngx_log(ngx_ERR, err)
     else
-        sub_redis:select(params.redis.database)
-        sub_redis:set_timeout(10000)
+        pubsub_redis:select(params.database)
+        pubsub_redis:set_timeout(params.read_timeout)
     end
-    self.events = _events.new(sub_redis)
+    self.events = _events.new(pubsub_redis)
 
     return self
 end

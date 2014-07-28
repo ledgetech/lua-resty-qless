@@ -36,7 +36,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_2"]:put("job_klass_1", { a = 1, b = 2})
             local job = q.queues["queue_2"]:pop()
@@ -106,7 +106,7 @@ spawned_from:nil
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_3"]:put("job_klass_1", 
                 { a = 1 }, 
@@ -156,7 +156,7 @@ after_triggered:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_4"]
 
@@ -203,7 +203,7 @@ after_triggered:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_5"]
             local jid = queue:put("job_klass_1")
@@ -234,7 +234,7 @@ ttl:60
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_6"]
             local jid = queue:put("job_klass_1")
@@ -352,7 +352,7 @@ after_cancel_triggered:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_8"]
             local jid = queue:put("job_klass_1")
@@ -398,7 +398,7 @@ jobs:0
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_9"]
             local jid = queue:put("job_klass_1")
@@ -469,7 +469,7 @@ total:1
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_10"]
             local jid1 = queue:put("job_klass_1")
@@ -515,7 +515,7 @@ job2_depends_count:1
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_11"]
             local jid1 = queue:put("job_klass_1")

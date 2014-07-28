@@ -36,7 +36,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
             ngx.say(cjson.encode(q.queues:counts()))
         ';
     }
@@ -60,7 +60,7 @@ GET /1
             r:connect("127.0.0.1", redis_params.port)
             r:select(redis_params.database)
             
-            local q = qless.new({ redis_client = r })
+            local q = qless.new({ redis = r })
             ngx.say(cjson.encode(q.queues:counts()))
         ';
     }
@@ -79,7 +79,7 @@ GET /1
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local all = q:config_get_all()
 

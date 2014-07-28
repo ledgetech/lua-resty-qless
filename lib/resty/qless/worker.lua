@@ -43,7 +43,7 @@ function _M.start(self, options)
 
     local function worker(premature)
         if not premature then
-            local q = qless.new({ redis = self.redis_params })
+            local q = qless.new(self.redis_params)
 
             local ok, reserver_type = pcall(require, "resty.qless.reserver." .. options.reserver)
             if not ok then

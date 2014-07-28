@@ -36,7 +36,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
             local counts = q.queues["queue_1"]:counts()
             ngx.say(counts["paused"])
             ngx.say(counts["running"])
@@ -75,7 +75,7 @@ scheduled one. None will be running.
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             q.queues["queue_1"]:put("job_klass_1")
             q.queues["queue_1"]:put("job_klass_2", { a = 1, b = 2})
@@ -119,7 +119,7 @@ false
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_1"]
 
@@ -159,7 +159,7 @@ false
             ngx.sleep(1) -- Wait for our delayed job to become available
 
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_1"]
 
@@ -190,7 +190,7 @@ multiple:job_klass_\d
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_1"]
 
@@ -229,7 +229,7 @@ scheduled:0
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local queue = q.queues["queue_1"]
 

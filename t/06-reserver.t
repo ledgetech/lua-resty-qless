@@ -36,7 +36,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid1 = q.queues["queue_16"]:put("testtask", { 1 }, { priority = 2 })
             local jid2 = q.queues["queue_16"]:put("testtask", { 1 }, { priotity = 1 })
@@ -67,7 +67,7 @@ jid2_match:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid1 = q.queues["queue_17"]:put("testtask", { 1 }, { priority = 2 })
             local jid2 = q.queues["queue_17"]:put("testtask", { 1 }, { priority = 1 })
@@ -98,7 +98,7 @@ jid2_match:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid1 = q.queues["queue_17"]:put("testtask", { 1 }, { priority = 2 })
             local jid2 = q.queues["queue_17"]:put("testtask", { 1 }, { priority = 1 })
