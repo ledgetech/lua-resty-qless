@@ -6,7 +6,7 @@ lua-resty-qless
 
 This binding provides a full implementation of **qless** via Lua script running in [OpenResty](http://openresty.org/) / [ngx_lua](https://github.com/openresty/lua-nginx-module), including workers which can be started during the `init_worker_by_lua` phase.
 
-Essentially, with this module and a modern Redis instance, you can turn your OpenResty server into a quite sophisticated job queing system, which is also compatable with the reference Ruby implementation, [qless](https://github.com/seomoz/qless).
+Essentially, with this module and a modern Redis instance, you can turn your OpenResty server into a quite sophisticated job queing system, which is also compatible with the reference Ruby implementation, [qless](https://github.com/seomoz/qless).
 
 *Note: This module is not designed to work in a pure Lua environment, though it should be straight forward enough to adapt.*
 
