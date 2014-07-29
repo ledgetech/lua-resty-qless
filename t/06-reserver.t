@@ -3,7 +3,7 @@
 use Test::Nginx::Socket;
 use Cwd qw(cwd);
 
-plan tests => repeat_each() * (blocks() * 4);
+plan tests => repeat_each() * (blocks() * 4) + 3;
 
 my $pwd = cwd();
 
@@ -92,7 +92,8 @@ jid2_match:true
 [warn]
 
 
-=== TEST 3: Test jobs are reserved in shuffled round robin order
+=== TEST 3: Test jobs are reserved in shuffled round robin order. Can't test for
+randomness, but we test that the jobs turn up without errors.
 --- http_config eval: $::HttpConfig
 --- config
     location = /1 {
@@ -104,20 +105,19 @@ jid2_match:true
             local jid2 = q.queues["queue_17"]:put("testtask", { 1 }, { priority = 1 })
             local jid3 = q.queues["queue_18"]:put("testtask", { 1 })
 
-            local ordered = require "resty.qless.reserver.shuffled_round_robin"
-            local reserver = ordered.new({ q.queues["queue_17"], q.queues["queue_18"] })
+            local shuffled = require "resty.qless.reserver.shuffled_round_robin"
+            local reserver = shuffled.new({ q.queues["queue_17"], q.queues["queue_18"] })
 
-            ngx.say("jid3_match:", reserver:reserve().jid == jid3)
-            ngx.say("jid1_match:", reserver:reserve().jid == jid1)
-            ngx.say("jid2_match:", reserver:reserve().jid == jid2)
+            ngx.log(ngx.INFO, reserver:reserve().queue_name)
+            ngx.log(ngx.INFO, reserver:reserve().queue_name)
+            ngx.log(ngx.INFO, reserver:reserve().queue_name)
         ';
     }
 --- request
 GET /1
 --- response_body
-jid3_match:true
-jid1_match:true
-jid2_match:true
 --- no_error_log
 [error]
 [warn]
+--- error_log eval
+["queue_17","queue_17","queue_18"]
