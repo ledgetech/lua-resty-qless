@@ -66,7 +66,7 @@ First things first, require `resty.qless` and create a client, specifying your R
 ```lua
 local resty_qless = require "resty.qless"
 
--- Default parameters shows below.
+-- Default parameters shown below.
 local qless = resty_qless.new({
     -- host = "127.0.0.1",
     -- port = 6379,
@@ -118,10 +118,10 @@ job has a unique jid, and it provides a means to interact with an
 existing job:
 
 ```lua
-# find an existing job by it's jid
+-- find an existing job by it's jid
 local job = qless.jobs:get(jid)
 
-# Query it to find out details about it:
+-- Query it to find out details about it:
 job.klass -- the class of the job
 job.queue -- the queue the job is in
 job.data  -- the data for the job
@@ -133,7 +133,7 @@ job.tags -- table of tags for this job
 job.original_retries -- the number of times the job is allowed to be retried
 job.retries_left -- the number of retries left
 
-# You can also change the job in various ways:
+-- You can also change the job in various ways:
 job:requeue("some_other_queue") -- move it to a new queue
 job:cancel() -- cancel the job
 job:tag("foo") -- add a tag
@@ -163,7 +163,7 @@ init_worker_by_lua '
         concurrency = 4,
         reserver = "ordered",
         queues = { "my_queue", "my_other_queue" },
-      })
+    })
 ';
 ```
 
@@ -444,7 +444,7 @@ and histogram. This same data is also provided for job completion:
 ```lua
 -- So, how're we doing today?
 local stats = queue:stats()
-# = { 'run' = { 'mean' = ..., }, 'wait' = {'mean' = ..., } }
+-- = { 'run' = { 'mean' = ..., }, 'wait' = {'mean' = ..., } }
 ```
 
 Time
