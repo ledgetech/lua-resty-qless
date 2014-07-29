@@ -4,7 +4,7 @@ lua-resty-qless
 **lua-resty-qless** is a binding to [qless-core](https://github.com/seomoz/qless-core) from [Moz](https://github.com/seomoz) - a powerful Redis based job queueing system inspired by
 [resque](https://github.com/defunkt/resque#readme), but built as a collection of Lua scripts for Redis.
 
-This binding provides a full implementation of **qless** via Lua script running in [OpenResty](http://openresty.org/) / [ngx_lua](https://github.com/openresty/lua-nginx-module), including workers which can be started during the `init_worker_by_lua` phase.
+This binding provides a full implementation of **qless** via Lua script running in [OpenResty](http://openresty.org/) / [lua-nginx-module](https://github.com/openresty/lua-nginx-module), including workers which can be started during the `init_worker_by_lua` phase.
 
 Essentially, with this module and a modern Redis instance, you can turn your OpenResty server into a quite sophisticated job queing system, which is also compatible with the reference Ruby implementation, [qless](https://github.com/seomoz/qless).
 
