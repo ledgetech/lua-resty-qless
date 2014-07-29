@@ -3,7 +3,7 @@
 use Test::Nginx::Socket;
 use Cwd qw(cwd);
 
-plan tests => repeat_each() * (blocks() * 3) + 2;
+plan tests => repeat_each() * (blocks() * 3) + 1;
 
 my $pwd = cwd();
 
@@ -25,7 +25,13 @@ our $HttpConfig = qq{
         -- Test task module, just sums numbers and logs the result.
         local sum = {}
 
-        function sum.perform(data)
+        function sum.perform(job)
+            local data = job.data
+            if not data or #data == 0 then
+                job:cancel()
+                return nil
+            end
+
             local sum = 0
             for _,v in ipairs(data) do
                 sum = sum + v
@@ -120,3 +126,26 @@ qr/Middleware stop/,
 qr/Middleware start/]
 
 
+=== TEST 3: Test a job can cancel itself if data is bad
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new(redis_params)
+
+            local jid = q.queues["queue_14"]:put("testtasks.sum")
+            ngx.sleep(1)
+
+            local job = q.jobs:get(jid)
+            if job then
+                ngx.say(job.state)
+            else
+                ngx.say("canceled")
+            end
+        ';
+    }
+--- request
+GET /1
+--- response_body
+canceled

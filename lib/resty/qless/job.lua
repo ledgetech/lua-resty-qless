@@ -99,11 +99,11 @@ function _M.perform(self)
     local ok, task = pcall(require, self.klass)
     if ok then
         if task.perform and type(task.perform) == "function" then
-            local res, err = task.perform(self.data)
-            if not res then
+            local ok, res, err = pcall(task.perform, self)
+            if not ok then
                 return nil, "failed-" .. self.queue_name, "'" .. self.klass .. "' " .. (err or "")
             else
-                return true
+                return res
             end
         else
             return nil, 
