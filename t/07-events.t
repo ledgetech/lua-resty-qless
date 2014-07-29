@@ -27,9 +27,9 @@ our $HttpConfig = qq{
         local subscribe = function(premature)
             if not premature then
                 local qless = require "resty.qless"
-                local q = qless.new({ redis = redis_params })
+                local events = qless.events(params)
 
-                q.events:listen({ "log", "canceled" }, function(channel, message)
+                events:listen({ "log", "canceled" }, function(channel, message)
                     if channel == "log" then
                         message = cjson.decode(message)
                         ngx.log(ngx.DEBUG, channel, " ", message.event)
@@ -60,7 +60,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new({ redis = redis_params })
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_19"]:put("testjob")
 

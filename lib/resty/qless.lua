@@ -57,6 +57,32 @@ local function gethostname()
 end
 
 
+local DEFAULT_REDIS_PARAMS = {
+    redis = nil, -- Used for passing an already established connection
+    host = "127.0.0.1",
+    port = 6379,
+    connect_timeout = 100,
+    read_timeout = 5000,
+    keepalive_timeout = nil,
+    keepalive_poolsize = nil,
+}
+
+
+local function redis_connect(params)
+    local redis = redis_mod:new()
+    redis:set_timeout(params.connect_timeout)
+    local ok, err = redis:connect(params.host, params.port)
+    if not ok then
+        ngx_log(ngx_ERR, err)
+        return nil, err
+    else
+        redis:select(params.database)
+        redis:set_timeout(params.read_timeout)
+        return redis
+    end
+end
+
+
 -- Jobs, to be accessed via qless.jobs.
 local _jobs = {}
 local _jobs_mt = { __index = _jobs }
@@ -180,10 +206,18 @@ local _events = {}
 local _events_mt = { __index = _events }
 
 
-function _events.new(redis)
-    return setmetatable({
-        redis = redis,
-    }, _events_mt)
+function _events.new(params)
+    if not params then params = {} end
+    setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
+
+    local redis, err = redis_connect(params)
+    if not redis then
+        return nil, err
+    else
+        return setmetatable({
+            redis = redis,
+        }, _events_mt)
+    end
 end
 
 
@@ -218,20 +252,11 @@ local _M = {
 
 local mt = { __index = _M }
 
-local DEFAULT_PARAMS = {
-    redis = nil, -- Used for passing an already established connection
-    host = "127.0.0.1",
-    port = 6379,
-    connect_timeout = 100,
-    read_timeout = 5000,
-    keepalive_timeout = nil,
-    keepalive_poolsize = nil,
-}
 
 
 function _M.new(params)
     if not params then params = {} end
-    setmetatable(params, { __index = DEFAULT_PARAMS })
+    setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
 
     local redis = params.redis
     if not redis then
@@ -256,19 +281,12 @@ function _M.new(params)
     self.queues = _queues.new(self)
     self.jobs = _jobs.new(self)
 
-    -- Pub/sub-y commands need their own connection
-    local pubsub_redis = redis_mod:new()
-    pubsub_redis:set_timeout(params.connect_timeout)
-    local ok, err = pubsub_redis:connect(params.host, params.port)
-    if not ok then
-        ngx_log(ngx_ERR, err)
-    else
-        pubsub_redis:select(params.database)
-        pubsub_redis:set_timeout(params.read_timeout)
-    end
-    self.events = _events.new(pubsub_redis)
-
     return self
+end
+
+
+function _M.events(params)
+    return _events.new(params)
 end
 
 
