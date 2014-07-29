@@ -9,6 +9,12 @@ This binding provides full access to the qless system via Lua script running in 
 
 *Note: This module is not designed to work in a pure Lua environment, though it should be straight forward enough to adapt.*
 
+Status
+======
+
+This module should be considered experimental, although the actual queue logic is handled by the `qless-core` scripts which
+are used in production, and the API itself is based upon the Ruby `qless` project which is a more mature reference implementation. Thus bugs are likely to be trivial and localised to this binding.
+
 
 Philosophy and Nomenclature
 ===========================
