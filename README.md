@@ -2,13 +2,13 @@ lua-resty-qless
 ===============
 
 **lua-resty-qless** is a binding to [qless-core](https://github.com/seomoz/qless-core) from [Moz](https://github.com/seomoz) - a powerful Redis based job queueing system inspired by
-[resque](https://github.com/defunkt/resque#readme), but built as a collection of Lua scripts for Redis.
+[resque](https://github.com/defunkt/resque#readme), but instead implemented as a collection of Lua scripts for Redis.
 
-This binding provides a full implementation of **qless** via Lua script running in [OpenResty](http://openresty.org/) / [lua-nginx-module](https://github.com/openresty/lua-nginx-module), including workers which can be started during the `init_worker_by_lua` phase.
+This binding provides a full implementation of **Qless** via Lua script running in [OpenResty](http://openresty.org/) / [lua-nginx-module](https://github.com/openresty/lua-nginx-module), including workers which can be started during the `init_worker_by_lua` phase.
 
-Essentially, with this module and a modern Redis instance, you can turn your OpenResty server into a quite sophisticated job queing system, which is also compatible with the reference Ruby implementation, [qless](https://github.com/seomoz/qless).
+Essentially, with this module and a modern Redis instance, you can turn your OpenResty server into a quite sophisticated yet lightweight job queuing system, which is also compatible with the reference Ruby implementation, [Qless](https://github.com/seomoz/qless).
 
-*Note: This module is not designed to work in a pure Lua environment, though it should be straight forward enough to adapt.*
+*Note: This module is not designed to work in a pure Lua environment.*
 
 Status
 ======
@@ -39,35 +39,35 @@ otherwise, that worker should just drop it and let the system reclaim it.
 Features
 ========
 
-1. __Jobs don't get dropped on the floor__ -- Sometimes workers drop jobs. Qless
+1. __Jobs don't get dropped on the floor__ Sometimes workers drop jobs. Qless
   automatically picks them back up and gives them to another worker
-1. __Tagging / Tracking__ -- Some jobs are more interesting than others. Track those
+1. __Tagging / Tracking__ Some jobs are more interesting than others. Track those
   jobs to get updates on their progress. Tag jobs with meaningful identifiers to
   find them quickly in the UI.
-1. __Job Dependencies__ -- One job might need to wait for another job to complete
-1. __Stats__ -- `qless` automatically keeps statistics about how long jobs wait
+1. __Job Dependencies__ One job might need to wait for another job to complete
+1. __Stats__ Qless automatically keeps statistics about how long jobs wait
   to be processed and how long they take to be processed. Currently, we keep
   track of the count, mean, standard deviation, and a histogram of these times.
-1. __Job data is stored temporarily__ -- Job info sticks around for a configurable
+1. __Job data is stored temporarily__ Job info sticks around for a configurable
   amount of time so you can still look back on a job's history, data, etc.
-1. __Priority__ -- Jobs with the same priority get popped in the order they were
+1. __Priority__ Jobs with the same priority get popped in the order they were
   inserted; a higher priority means that it gets popped faster
-1. __Retry logic__ -- Every job has a number of retries associated with it, which are
+1. __Retry logic__ Every job has a number of retries associated with it, which are
   renewed when it is put into a new queue or completed. If a job is repeatedly
   dropped, then it is presumed to be problematic, and is automatically failed.
-1. __Web App__ -- The [Ruby binding](https://github.com/seomoz/qless) has a Sinatra-based web
+1. __Web App__ The [Ruby binding](https://github.com/seomoz/qless) has a Sinatra-based web
   app that gives you control over certain operational issues
-1. __Scheduled Work__ -- Until a job waits for a specified delay (defaults to 0),
+1. __Scheduled Work__ Until a job waits for a specified delay (defaults to 0),
   jobs cannot be popped by workers
-1. __Recurring Jobs__ -- Scheduling's all well and good, but we also support
+1. __Recurring Jobs__ Scheduling's all well and good, but we also support
   jobs that need to recur periodically.
-1. __Notifications__ -- Tracked jobs emit events on pubsub channels as they get
+1. __Notifications__ Tracked jobs emit events on pubsub channels as they get
   completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
 
 Enqueing Jobs
 =============
-First things first, require `resty.qless` and create a client, specifying your Redis conneciton details.
+First things first, require `resty.qless` and create a client, specifying your Redis connection details.
 
 ```lua
 local resty_qless = require "resty.qless"
@@ -87,7 +87,7 @@ Jobs themselves are modules, which must be loadable via `require` and provide a 
 
 
 ```lua
--- my/test/job.lua
+-- my/test/job.lua (the job's "klass" becomes "my.test.job")
 
 local _M = {}
 
@@ -117,9 +117,9 @@ local job = queue:pop()
 job:perform()
 ```
 
-The job data must be a table (which is serialised to JSON internally. See below for a list of the supported job options.
+The job data must be a table (which is serialised to JSON internally).
 
-The argument returned by `queue:put()` is the job ID, or jid. Every Qless
+The value returned by `queue:put()` is the job ID, or jid. Every Qless
 job has a unique jid, and it provides a means to interact with an
 existing job:
 
@@ -149,7 +149,7 @@ job:untag("foo") -- remove a tag
 Running Workers
 ================
 
-Traditionally, Qless offered a Ruby worker inspired by Resque.
+Traditionally, Qless offered a forking Ruby worker script inspired by Resque.
 
 In lua-resty-qless, we take advantage of the `init_lua_by_worker` phase 
 and `ngx.timer.at` API in order run workers in independent "light threads",
@@ -173,7 +173,7 @@ init_worker_by_lua '
 ';
 ```
 
-Workers support two strategies (reservers) for what order to pop jobs off the queues: ordered, round-robin and shuffled round-robin.
+Workers support three strategies (reservers) for what order to pop jobs off the queues: **ordered**, **round-robin** and **shuffled round-robin**.
 
 The ordered reserver will keep popping jobs off the first queue until
 it is empty, before trying to pop jobs off the second queue. The
@@ -184,12 +184,10 @@ You could also easily implement your own. Follow the other reservers as a guide,
 is "requireable" with `require "resty.qless.reserver.myreserver"`.
 
 Middleware
-==========
+=========
 
 Workers also support middleware which can be used to inject
-logic around the processing of a single job in
-the child process. This can be useful, for example, when you need to
-re-establish a connection to your database in each job.
+logic around the processing of a single job. This can be useful, for example, when you need to re-establish a database connection.
 
 To do this you set the worker's `middleware` to a function, and call `coroutine.yield` where you want
 the job to be performed.
@@ -210,13 +208,18 @@ worker:start({ queues = "my_queue" })
 Job Dependencies
 ================
 Let's say you have one job that depends on another, but the task definitions are
-fundamentally different. You need to bake a turkey, and you need to make stuffing,
+fundamentally different. You need to cook a turkey, and you need to make stuffing,
 but you can't make the turkey until the stuffing is made:
 
 ```lua
 local queue = qless.queues['cook']
-local stuffing_jid = queue:put("jobs.make.stuffing", { lost = "of butter" })
-local turkey_jid   = queue:put("jobs.make.turkey", { with = "stuffing" }, { depends = stuffing_jid })
+local stuffing_jid = queue:put("jobs.make.stuffing", 
+  { lots = "of butter" }
+)
+local turkey_jid  = queue:put("jobs.make.turkey", 
+  { with = "stuffing" }, 
+  { depends = stuffing_jid }
+)
 ```
 
 When the stuffing job completes, the turkey job is unlocked and free to be processed.
@@ -234,13 +237,13 @@ What happens when you want to adjust a job's priority while it's still waiting i
 a queue?
 
 ```lua
-local job = qless.jobs:get('0c53b0404c56012f69fa482a1427ab7d')
+local job = qless.jobs:get("0c53b0404c56012f69fa482a1427ab7d")
 job.priority = 10
 -- Now this will get popped before any job of lower priority
 ```
 
 *Note: Setting the priority field above is all you need to do, thanks to Lua metamethods which are invoked to update
-Redis. This may look a little "auto-magic", but the intention was to retain API design compatability with the Ruby
+Redis. This may look a little "auto-magic", but the intention is to retain API design compatibility with the Ruby
 client as much as possible.*
  
 Scheduled Jobs
@@ -259,7 +262,10 @@ lesser-priority jobs:
 
 ```lua
 -- Run in 10 minutes
-queue:put("jobs.test", { foo = "bar" }, { delay = 600, priority = 100 })
+queue:put("jobs.test", 
+  { foo = "bar" }, 
+  { delay = 600, priority = 100 }
+)
 ```
 
 Recurring Jobs
@@ -277,7 +283,7 @@ local recurring_jid = queue:recur("jobs.test", { widget = "warble" }, 3600)
 You can even access them in much the same way as you would normal jobs:
 
 ```lua
-local job = qless.jobs:get('22ac75008a8011e182b24cf9ab3a8f3b')
+local job = qless.jobs:get("22ac75008a8011e182b24cf9ab3a8f3b")
 ```
 
 Changing the interval at which it runs after the fact is trivial:
@@ -292,11 +298,15 @@ an offset which is how long it should wait before popping the first job:
 
 ```lua
 -- 23 minutes of waiting until it should go
-queue:recur("jobs.test", { howdy = "hello" }, 3600, { offset = (23 * 60) })
+queue:recur("jobs.test", 
+  { howdy = "hello" }, 
+  3600,
+  { offset = (23 * 60) }
+)
 ```
 
 Recurring jobs also have priority, a configurable number of retries, and tags. These
-settings don't apply to the recurring jobs, but rather the jobs that they create. In the
+settings don't apply to the recurring jobs, but rather the jobs that they spawn. In the
 case where more than one interval passes before a worker tries to pop the job, __more than
 one job is created__. The thinking is that while it's completely client-managed, the state
 should not be dependent on how often workers are trying to pop jobs.
@@ -316,7 +326,7 @@ ngx.say(#jobs, " jobs got popped")
 Configuration Options
 =====================
 You can get and set global (in the context of the same Redis instance) configuration
-to change the behavior for heartbeating, and so forth. There aren't a tremendous number
+to change the behaviour for heartbeating, and so forth. There aren't a tremendous number
 of configuration options, but an important one is how long job data is kept around. Job
 data is expired after it has been completed for `jobs-history` seconds, but is limited to
 the last `jobs-history-count` completed jobs. These default to 50k jobs, and 30 days, but
@@ -329,12 +339,11 @@ qless:set_config("jobs-history-count", 500)
 
 Tagging / Tracking
 ==================
-In qless, 'tracking' means flagging a job as important. Tracked jobs have a tab reserved
-for them in the web interface, and they also emit subscribable events as they make progress
-(more on that below). You can flag a job from the web interface, or the corresponding code:
+In qless, 'tracking' means flagging a job as important. Tracked jobs emit subscribable events as they make progress
+(more on that below).
 
 ```lua
-local job = qless.jobs:get('b1882e009a3d11e192d0b174d751779d')
+local job = qless.jobs:get("b1882e009a3d11e192d0b174d751779d")
 job:track()
 ```
 
@@ -343,7 +352,9 @@ might be associated with customer accounts, or some other key that makes sense f
 project.
 
 ```lua
-queue:put("jobs.test", { tags = "aplenty" }, { tags = { "12345", "foo", "bar" } })
+queue:put("jobs.test", {}, 
+  { tags = { "12345", "foo", "bar" } }
+)
 ```
 
 This makes them searchable in the Ruby / Sinatra web interface, or from code:
@@ -378,13 +389,13 @@ events:listen({ "canceled", "failed" }, function(channel, jid)
 end
 ```
 
-You can also liten to the "log" channel, whilch gives a JSON structure of all logged events.
+You can also listen to the "log" channel, whilch gives a JSON structure of all logged events.
 
 ```lua
 local events = qless.events(redis_params)
 
 events:listen({ "log" }, function(channel, message)
-    local message - cjson.decode(message)
+    local message = cjson.decode(message)
     ngx.log(ngx.INFO, message.event, " ", message.jid)
 end
 ```
@@ -420,10 +431,10 @@ If you want to increase the heartbeat in all queues,
 qless:set_config("heartbeat", 600)
 
 -- But the testing queue doesn't get as long.
-qless.queues['testing'].heartbeat = 300
+qless.queues["testing"].heartbeat = 300
 ```
 
-When choosing a heartbeat interval, realize that this is the amount of time that
+When choosing a heartbeat interval, note that this is the amount of time that
 can pass before qless realizes if a job has been dropped. At the same time, you don't
 want to burden qless with heartbeating every 10 seconds if your job is expected to
 take several hours.
@@ -441,7 +452,7 @@ end
 
 Stats
 =====
-One nice feature of `qless` is that you can get statistics about usage. Stats are
+One nice feature of Qless is that you can get statistics about usage. Stats are
 aggregated by day, so when you want stats about a queue, you need to say what queue
 and what day you're talking about. By default, you just get the stats for today.
 These stats include information about the mean job wait time, standard deviation,
@@ -484,7 +495,7 @@ and data.
 
 James Hurst <james@pintsized.co.uk>
 
-Based on the Ruby [qless reference implementation](https://github.com/seomoz/qless). Documentation also adapted from the
+Based on the Ruby [Qless reference implementation](https://github.com/seomoz/qless). Documentation also adapted from the
 original project.
 
 ## Licence
