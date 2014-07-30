@@ -42,8 +42,7 @@ Features
 1. __Jobs don't get dropped on the floor__ Sometimes workers drop jobs. Qless
   automatically picks them back up and gives them to another worker
 1. __Tagging / Tracking__ Some jobs are more interesting than others. Track those
-  jobs to get updates on their progress. Tag jobs with meaningful identifiers to
-  find them quickly in the UI.
+  jobs to get updates on their progress.
 1. __Job Dependencies__ One job might need to wait for another job to complete
 1. __Stats__ Qless automatically keeps statistics about how long jobs wait
   to be processed and how long they take to be processed. Currently, we keep
