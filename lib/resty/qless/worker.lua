@@ -30,7 +30,8 @@ local DEFAULT_OPTIONS = {
 }
 
 
-function _M.new(redis_params )
+function _M.new(redis_params)
+    if not redis_params then redis_params = {} end
     return setmetatable({
         redis_params = redis_params,
         middleware = nil,
@@ -43,7 +44,10 @@ function _M.start(self, options)
 
     local function worker(premature)
         if not premature then
-            local q = qless.new(self.redis_params)
+            local redis_params = self.redis_params
+            redis_params.redis_client = self.redis_client
+
+            local q = qless.new(redis_params)
 
             local ok, reserver_type = pcall(require, "resty.qless.reserver." .. options.reserver)
             if not ok then
@@ -92,10 +96,9 @@ end
 function _M.perform(self, job)
     local res, err_type, err
     if self.middleware and type(self.middleware) == "function" then
-        local mw = co_create(self.middleware)
-        co_resume(mw)
+        local mw = co_create(self.middleware, job)
 
-        res, err_type, err = job:perform()
+        res, err_type, err = job:perform(select(1, co_resume(mw)))
 
         if co_status(mw) == "suspended" then
             co_resume(mw)
