@@ -96,9 +96,9 @@ end
 function _M.perform(self, job)
     local res, err_type, err
     if self.middleware and type(self.middleware) == "function" then
-        local mw = co_create(self.middleware, job)
+        local mw = co_create(self.middleware)
 
-        res, err_type, err = job:perform(select(1, co_resume(mw)))
+        res, err_type, err = job:perform(select(1, co_resume(mw, job)))
 
         if co_status(mw) == "suspended" then
             co_resume(mw)
