@@ -95,15 +95,17 @@ function _M.queue(self)
 end
 
 
-function _M.perform(self)
+function _M.perform(self, ...)
     local ok, task = pcall(require, self.klass)
     if ok then
         if task.perform and type(task.perform) == "function" then
-            local ok, res, err = pcall(task.perform, self)
+            local ok, res, err_type, err  = pcall(task.perform, self, ...)
+
             if not ok then
+                local err = res
                 return nil, "failed-" .. self.queue_name, "'" .. self.klass .. "' " .. (err or "")
             else
-                return res
+                return res, err_type, err
             end
         else
             return nil, 
