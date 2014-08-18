@@ -194,7 +194,7 @@ the job to be performed.
 ```lua
 local worker = resty_qless_worker.new(redis_params)
 
-worker.middleware = function()
+worker.middleware = function(job)
     -- Do pre job work
     coroutine.yield()
     -- Do post job work
