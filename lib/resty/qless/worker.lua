@@ -30,10 +30,10 @@ local DEFAULT_OPTIONS = {
 }
 
 
-function _M.new(redis_params)
-    if not redis_params then redis_params = {} end
+function _M.new(redis_params, redis_options)
     return setmetatable({
         redis_params = redis_params,
+        redis_options = redis_options,
         middleware = nil,
     }, mt)
 end
@@ -44,10 +44,10 @@ function _M.start(self, options)
 
     local function worker(premature)
         if not premature then
-            local redis_params = self.redis_params
-            redis_params.redis_client = self.redis_client
-
-            local q = qless.new(redis_params)
+            local q, err = qless.new(self.redis_params, self.redis_options)
+            if not q then
+                return nil, err
+            end
 
             local ok, reserver_type = pcall(require, "resty.qless.reserver." .. options.reserver)
             if not ok then

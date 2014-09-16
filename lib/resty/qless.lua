@@ -1,5 +1,6 @@
 local ffi = require "ffi"
 local redis_mod = require "resty.redis"
+local redis_connector = require "resty.redis.connector"
 local cjson = require "cjson"
 
 local qless_luascript = require "resty.qless.luascript"
@@ -58,29 +59,9 @@ end
 
 
 local DEFAULT_REDIS_PARAMS = {
-    redis = nil, -- Used for passing an already established connection
     host = "127.0.0.1",
     port = 6379,
-    connect_timeout = 100,
-    read_timeout = 5000,
-    keepalive_timeout = nil,
-    keepalive_poolsize = nil,
 }
-
-
-local function redis_connect(params)
-    local redis = redis_mod:new()
-    redis:set_timeout(params.connect_timeout)
-    local ok, err = redis:connect(params.host, params.port)
-    if not ok then
-        ngx_log(ngx_ERR, err)
-        return nil, err
-    else
-        redis:select(params.database)
-        redis:set_timeout(params.read_timeout)
-        return redis
-    end
-end
 
 
 -- Jobs, to be accessed via qless.jobs.
@@ -253,35 +234,30 @@ local _M = {
 local mt = { __index = _M }
 
 
+function _M.new(params, options)
+    local redis, err
 
-function _M.new(params)
-    if not params then params = {} end
-    setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
-
-    local redis = params.redis
-    if not redis then
-        redis = redis_mod:new()
-        redis:set_timeout(params.connect_timeout)
-        local ok, err = redis:connect(params.host, params.port)
-        if not ok then
-            ngx_log(ngx_ERR, err)
-        else
-            redis:select(params.database)
-            redis:set_timeout(params.read_timeout)
-        end
+    if params.redis_client then
+        redis = params.redis_client
+    else
+        redis, err = redis_connector.connect(params, options)
     end
 
-    local self = setmetatable({ 
-        redis = redis,
-        worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. random_hex(4),
-        luascript = qless_luascript.new("qless", redis),
-    }, mt)
+    if not redis then
+        return nil, err
+    else
+        local self = setmetatable({ 
+            redis = redis,
+            worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. random_hex(4),
+            luascript = qless_luascript.new("qless", redis),
+        }, mt)
 
-    self.workers = _workers.new(self)
-    self.queues = _queues.new(self)
-    self.jobs = _jobs.new(self)
+        self.workers = _workers.new(self)
+        self.queues = _queues.new(self)
+        self.jobs = _jobs.new(self)
 
-    return self
+        return self
+    end
 end
 
 
