@@ -188,10 +188,17 @@ local _events_mt = { __index = _events }
 
 
 function _events.new(params)
+    local redis, err
+
     if not params then params = {} end
     setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
+    
+    if params.redis_client then
+        redis = params.redis_client
+    else
+        redis, err = redis_connector.connect(params, options)
+    end
 
-    local redis, err = redis_connect(params)
     if not redis then
         return nil, err
     else

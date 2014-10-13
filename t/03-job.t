@@ -12,14 +12,18 @@ $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/../lua-resty-redis/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua '
         cjson = require "cjson"
         redis_params = {
-            host = "127.0.0.1",
-            port = $ENV{TEST_REDIS_PORT},
-            database = $ENV{TEST_REDIS_DATABASE},
+            redis = {
+                host = "127.0.0.1",
+                port = $ENV{TEST_REDIS_PORT},
+            }
+        }
+        redis_options = {
+            database = $ENV{TEST_REDIS_DATABASE}
         }
     ';
 };
@@ -36,7 +40,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local jid = q.queues["queue_2"]:put("job_klass_1", { a = 1, b = 2})
             local job = q.queues["queue_2"]:pop()
@@ -106,7 +110,7 @@ spawned_from:nil
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local jid = q.queues["queue_3"]:put("job_klass_1", 
                 { a = 1 }, 
@@ -156,7 +160,7 @@ after_triggered:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_4"]
 
@@ -203,7 +207,7 @@ after_triggered:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_5"]
             local jid = queue:put("job_klass_1")
@@ -234,7 +238,7 @@ ttl:60
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_6"]
             local jid = queue:put("job_klass_1")
@@ -352,7 +356,7 @@ after_cancel_triggered:true
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_8"]
             local jid = queue:put("job_klass_1")
@@ -398,7 +402,7 @@ jobs:0
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_9"]
             local jid = queue:put("job_klass_1")
@@ -469,7 +473,7 @@ total:1
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_10"]
             local jid1 = queue:put("job_klass_1")
@@ -515,7 +519,7 @@ job2_depends_count:1
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_11"]
             local jid1 = queue:put("job_klass_1")

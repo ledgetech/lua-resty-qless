@@ -12,14 +12,18 @@ $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/../lua-resty-redis/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua '
         cjson = require "cjson"
         redis_params = {
-            host = "127.0.0.1",
-            port = $ENV{TEST_REDIS_PORT},
-            database = $ENV{TEST_REDIS_DATABASE},
+            redis = {
+                host = "127.0.0.1",
+                port = $ENV{TEST_REDIS_PORT},
+            }
+        }
+        redis_options = {
+            database = $ENV{TEST_REDIS_DATABASE}
         }
     ';
 };
@@ -36,7 +40,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
             local counts = q.queues["queue_1"]:counts()
             ngx.say(counts["paused"])
             ngx.say(counts["running"])
@@ -75,7 +79,7 @@ scheduled one. None will be running.
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             q.queues["queue_1"]:put("job_klass_1")
             q.queues["queue_1"]:put("job_klass_2", { a = 1, b = 2})
@@ -119,7 +123,7 @@ false
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_1"]
 
@@ -159,7 +163,7 @@ false
             ngx.sleep(1) -- Wait for our delayed job to become available
 
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_1"]
 
@@ -190,7 +194,7 @@ multiple:job_klass_\d
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_1"]
 
@@ -229,7 +233,7 @@ scheduled:0
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+            local q = qless.new(redis_params, redis_options)
 
             local queue = q.queues["queue_1"]
 
