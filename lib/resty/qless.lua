@@ -77,7 +77,7 @@ end
 
 
 function _jobs.complete(self, offset, count)
-    self.client:call("jobs", "complete", offset or 0, count or 25)
+    return self.client:call("jobs", "complete", offset or 0, count or 25)
 end
 
 
@@ -109,7 +109,7 @@ function _jobs.failed(self, tag, offset, count)
     else
         local results = self.client:call("failed", tag, offset or 0, count or 25)
         results = cjson_decode(results)
-        results["jobs"] = self:multiget(results["jobs"])
+        results["jobs"] = self:multiget(unpack(results["jobs"]))
         return results
     end
 end
