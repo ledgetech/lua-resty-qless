@@ -21,7 +21,7 @@ local mt = { __index = _M }
 local current_path = str_sub(debug_getinfo(1).source, 2, str_len("/luascript.lua") * -1)
 
 -- Load the qless scripts and generate the sha1 digest.
-local f = assert(io_open(current_path .. "../../../qless-core/qless.lua", "r")) 
+local f = assert(io_open(current_path .. "../../qless.lua", "r")) 
 local qless_script = f:read("*all")
 local qless_script_sha1 = ngx_sha1_bin(qless_script)
 local qless_script_sha1_sum = str_gsub(qless_script_sha1, "(.)",
