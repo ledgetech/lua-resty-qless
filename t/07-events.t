@@ -12,18 +12,14 @@ $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/../lua-resty-redis/lib/?.lua;$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua '
         cjson = require "cjson"
         redis_params = {
-            redis = {
-                host = "127.0.0.1",
-                port = $ENV{TEST_REDIS_PORT},
-            }
-        }
-        redis_options = {
-            database = $ENV{TEST_REDIS_DATABASE}
+            host = "127.0.0.1",
+            port = $ENV{TEST_REDIS_PORT},
+            db = $ENV{TEST_REDIS_DATABASE},
         }
     ';
 
@@ -31,7 +27,7 @@ our $HttpConfig = qq{
         local subscribe = function(premature)
             if not premature then
                 local qless = require "resty.qless"
-                local events = qless.events(redis_params, redis_options)
+                local events = qless.events(redis_params)
 
                 events:listen({ "log", "canceled" }, function(channel, message)
                     if channel == "log" then
@@ -64,7 +60,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params, redis_options)
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_19"]:put("testjob")
 

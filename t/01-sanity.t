@@ -12,18 +12,14 @@ $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/../lua-resty-redis/lib/?.lua;$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua '
         cjson = require "cjson"
         redis_params = {
-            redis = {
-                host = "127.0.0.1",
-                port = $ENV{TEST_REDIS_PORT},
-            }
-        }
-        redis_options = {
-            database = $ENV{TEST_REDIS_DATABASE}
+            host = "127.0.0.1",
+            port = $ENV{TEST_REDIS_PORT},
+            db = $ENV{TEST_REDIS_DATABASE},
         }
     ';
 };
@@ -40,7 +36,8 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q, err = qless.new(redis_params, redis_options)
+        ngx.log(ngx.DEBUG, redis_params.host .. ":" .. redis_params.port)
+            local q, err = qless.new(redis_params)
             if not q then
                 ngx.log(ngx.ERR, err)
             end
@@ -64,8 +61,8 @@ GET /1
             local qless = require "resty.qless"
             local redis = require "resty.redis"
             local r = redis.new()
-            r:connect("127.0.0.1", redis_params.redis.port)
-            r:select(redis_params.database)
+            r:connect("127.0.0.1", redis_params.port)
+            r:select(redis_params.db)
             
             local q = qless.new({ redis_client = r })
             ngx.say(cjson.encode(q.queues:counts()))
@@ -86,7 +83,7 @@ GET /1
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params, redis_options)
+            local q = qless.new(redis_params)
 
             local all = q:config_get_all()
 

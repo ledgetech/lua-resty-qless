@@ -12,18 +12,14 @@ $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/../lua-resty-redis/lib/?.lua;$pwd/lib/?.lua;;";
+    lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua '
         cjson = require "cjson"
         redis_params = {
-            redis = {
-                host = "127.0.0.1",
-                port = $ENV{TEST_REDIS_PORT},
-            }
-        }
-        redis_options = {
-            database = $ENV{TEST_REDIS_DATABASE}
+            host = "127.0.0.1",
+            port = $ENV{TEST_REDIS_PORT},
+            db = $ENV{TEST_REDIS_DATABASE}
         }
 
         -- Test task module, just sums numbers and logs the result.
@@ -52,7 +48,7 @@ our $HttpConfig = qq{
     init_worker_by_lua '
         local Qless_Worker = require "resty.qless.worker"
 
-        local worker = Qless_Worker.new(redis_params, redis_options)
+        local worker = Qless_Worker.new(redis_params)
 
         worker:start({
             interval = 1,
@@ -62,7 +58,7 @@ our $HttpConfig = qq{
         }) 
 
 
-        local worker_mw = Qless_Worker.new(redis_params, redis_options)
+        local worker_mw = Qless_Worker.new(redis_params)
 
         worker_mw.middleware = function()
             ngx.log(ngx.NOTICE, "Middleware start")
@@ -88,7 +84,7 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params, redis_options)
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_14"]:put("testtasks.sum", { 1, 2, 3, 4 })
             ngx.sleep(1)
@@ -111,7 +107,7 @@ complete
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params, redis_options)
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_15"]:put("testtasks.sum", { 1, 2, 3, 4 })
             ngx.sleep(1)
@@ -136,7 +132,7 @@ qr/Middleware start/]
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-            local q = qless.new(redis_params, redis_options)
+            local q = qless.new(redis_params)
 
             local jid = q.queues["queue_14"]:put("testtasks.sum")
             ngx.sleep(1)

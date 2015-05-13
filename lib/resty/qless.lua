@@ -197,7 +197,8 @@ function _events.new(params)
     if params.redis_client then
         redis = params.redis_client
     else
-        redis, err = redis_connector.connect(params, options)
+        local rc = redis_connector.new()
+        redis, err = rc:connect(params)
     end
 
     if not redis then
@@ -248,7 +249,20 @@ function _M.new(params, options)
     if params.redis_client then
         redis = params.redis_client
     else
-        redis, err = redis_connector.connect(params, options)
+        local rc = redis_connector.new()
+        if options then
+            if options.connect_timeout then
+                rc:set_connect_timeout(options.connect_timeout)
+            end
+            if options.read_timeout then
+                rc:set_read_timeout(options.read_timeout)
+            end
+            if options.connection_options then
+                rc:set_connection_options(options.connection_options)
+            end
+        end
+
+        redis, err = rc:connect(params)
     end
 
     if not redis then

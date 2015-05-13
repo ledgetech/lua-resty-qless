@@ -30,10 +30,9 @@ local DEFAULT_OPTIONS = {
 }
 
 
-function _M.new(redis_params, redis_options)
+function _M.new(redis_params)
     return setmetatable({
         redis_params = redis_params,
-        redis_options = redis_options,
         middleware = nil,
     }, mt)
 end
@@ -44,7 +43,7 @@ function _M.start(self, options)
 
     local function worker(premature)
         if not premature then
-            local q, err = qless.new(self.redis_params, self.redis_options)
+            local q, err = qless.new(self.redis_params)
             if not q then
                 return nil, err
             end
