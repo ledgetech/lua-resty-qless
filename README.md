@@ -16,6 +16,14 @@ Status
 This module should be considered experimental.
 
 
+Requirements
+============
+
+* Redis >= 2.8.x
+* OpenResty >= 1.7.x
+* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.01
+
+
 Philosophy and Nomenclature
 ===========================
 A `job` is a unit of work identified by a job id or `jid`. A `queue` can contain
