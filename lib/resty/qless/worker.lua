@@ -45,7 +45,15 @@ function _M.start(self, options)
         if not premature then
             local q, err = qless.new(self.redis_params)
             if not q then
-                return nil, err
+                ngx_log(ngx_ERR, "qless could not connect to Redis: ", err)
+
+                -- Try again at interval
+                local ok, err = ngx_timer_at(options.interval, worker)
+                if not ok then
+                    ngx_log(ngx_ERR, "failed to run worker: ", err)
+                else
+                    return ok
+                end
             end
 
             local ok, reserver_type = pcall(require, "resty.qless.reserver." .. options.reserver)
