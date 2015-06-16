@@ -85,15 +85,13 @@ function _M.new(name, client)
 end
 
 
-local function set_config(self, config, value)
-    -- TODO
-    --@client.config["#{@name}-#{config}"] = value
+function _M.config_set(self, k, v)
+    return self.client:call("config.set", self.name .. "-" .. k, v)
 end
 
 
-local function get_config(self, config)
-    -- TODO
-    -- @client.config["#{@name}-#{config}"]
+function _M.config_get(self, k)
+    return self.client:call("config.get", self.name .. "-" .. k)
 end
 
 
