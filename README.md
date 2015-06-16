@@ -340,8 +340,8 @@ the last `jobs-history-count` completed jobs. These default to 50k jobs, and 30 
 depending on volume, your needs may change. To only keep the last 500 jobs for up to 7 days:
 
 ```lua
-qless:set_config("jobs-history", 7 * 86400)
-qless:set_config("jobs-history-count", 500)
+qless:config_set("jobs-history", 7 * 86400)
+qless:config_get("jobs-history-count", 500)
 ```
 
 Tagging / Tracking
