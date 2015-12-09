@@ -159,10 +159,10 @@ _M.move = _M.requeue -- Old versions of qless previoulsly used 'move'
 
 function _M.fail(self, group, message)
     self:begin_state_change("fail")
-    local res, err = self.client:call("fail", 
-        self.jid, 
+    local res, err = self.client:call("fail",
+        self.jid,
         self.client.worker_name,
-        group, message,
+        group, message or "[no message]",
         cjson_encode(self.data))
 
     if not res then
