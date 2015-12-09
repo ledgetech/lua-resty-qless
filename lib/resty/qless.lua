@@ -302,7 +302,6 @@ function _M.call(self, command, ...)
     local res, err = self.luascript:call(command, ngx_now(), select(1, ...))
     if not res then
         ngx_log(ngx_ERR, err)
-        ngx.log(ngx_ERR, debug.traceback())
     end
     return res, err
 end

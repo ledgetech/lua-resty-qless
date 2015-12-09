@@ -132,7 +132,7 @@ function _M.put(self, klass, data, options)
         "put", 
         self.worker_name, 
         self.name, 
-        self.client:generate_jid(), 
+        options.jid or self.client:generate_jid(), 
         klass, 
         cjson_encode(data or {}),
         options.delay or 0,
