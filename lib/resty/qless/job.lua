@@ -13,7 +13,7 @@ local _M = {
     _VERSION = '0.01',
 }
 
-local mt = { 
+local mt = {
     -- We hide priority as __priority, and use metamethods to update redis
     -- when the value is set.
     __index = function (t, k)
@@ -81,7 +81,7 @@ function _M.build(client, klass, atts)
         failure          = {},
         history          = {},
         dependencies     = {},
-        dependents       = {}, 
+        dependents       = {},
     }
     setmetatable(atts, { __index = defaults })
     atts.data = cjson_encode(atts.data)
@@ -108,13 +108,13 @@ function _M.perform(self, ...)
                 return res, err_type, err
             end
         else
-            return nil, 
-                self.queue_name .. "-invalid-task", 
+            return nil,
+                self.queue_name .. "-invalid-task",
                 "Job '" .. self.klass .. "' has no perform function"
         end
     else
-        return nil, 
-            self.queue_name .. "-invalid-task", 
+        return nil,
+            self.queue_name .. "-invalid-task",
             "Module '" .. self.klass .. "' could not be found"
     end
 end
@@ -150,7 +150,7 @@ function _M.requeue(self, queue, options)
         "tags", cjson_encode(options.tags or self.tags),
         "retries", options.retries or self.original_retries,
         "depends", cjson_encode(options.depends or self.dependencies)
-    )     
+    )
     self:finish_state_change("requeue")
     return res
 end
@@ -177,9 +177,9 @@ end
 
 function _M.heartbeat(self)
     self.expires_at = self.client:call(
-        "heartbeat", 
-        self.jid, 
-        self.worker_name, 
+        "heartbeat",
+        self.jid,
+        self.worker_name,
         cjson_encode(self.data)
     )
     return self.expires_at
@@ -221,7 +221,7 @@ function _M.retry(self, delay, group, message)
     if not delay then delay = 0 end
 
     self:begin_state_change("retry")
-    local res = self.client:call("retry", 
+    local res = self.client:call("retry",
         self.jid,
         self.queue_name,
         self.worker_name,
