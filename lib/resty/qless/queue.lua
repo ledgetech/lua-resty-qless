@@ -10,7 +10,7 @@ local cjson_decode = cjson.decode
 
 
 
--- Object for interacting with jobs in different states in the queue. Not meant to be 
+-- Object for interacting with jobs in different states in the queue. Not meant to be
 -- instantiated directly, it's accessed via queue.jobs.
 local _queue_jobs = {}
 local _queue_jobs_mt = { __index = _queue_jobs }
@@ -34,7 +34,7 @@ end
 function _queue_jobs.scheduled(self, start, count)
     return self.client:call("jobs", "scheduled", self.name, start or 0, count or 25)
 end
-    
+
 
 function _queue_jobs.depends(self, start, count)
     return self.client:call("jobs", "depends", self.name, start or 0, count or 25)
@@ -52,7 +52,7 @@ local _M = {
 }
 
 
-local mt = { 
+local mt = {
     __index = function(t, k)
         if k == "heartbeat" then
             return _M.get_config(k)
@@ -74,7 +74,7 @@ local mt = {
 
 
 function _M.new(name, client)
-    local self = setmetatable({ 
+    local self = setmetatable({
         name = name,
         client = client,
         worker_name = client.worker_name,
@@ -112,7 +112,7 @@ function _M.pause(self, options)
     local client = self.client
     local res, err
     res, err = client:call("pause", self.name)
-    
+
     if options.stop_jobs then
         res, err = client:call("timeout", self.jobs:running(0, -1))
     end
@@ -129,11 +129,11 @@ end
 function _M.put(self, klass, data, options)
     if not options then options = {} end
     return self.client:call(
-        "put", 
-        self.worker_name, 
-        self.name, 
-        options.jid or self.client:generate_jid(), 
-        klass, 
+        "put",
+        self.worker_name,
+        self.name,
+        options.jid or self.client:generate_jid(),
+        klass,
         cjson_encode(data or {}),
         options.delay or 0,
         "priority", options.priority or 0,
