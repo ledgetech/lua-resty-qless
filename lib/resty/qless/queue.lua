@@ -149,7 +149,7 @@ function _M.recur(self, klass, data, interval, options)
     return self.client:call(
         "recur",
         self.name,
-        self.client:generate_jid(),
+        options.jid or self.client:generate_jid(),
         klass,
         cjson_encode(data or {}),
         "interval", interval, options.offset or 0,
