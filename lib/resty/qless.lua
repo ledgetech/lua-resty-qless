@@ -14,6 +14,7 @@ local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
 local ngx_ERR = ngx.ERR
 local ngx_worker_pid = ngx.worker.pid
+local ngx_worker_id = ngx.worker.id
 local math_floor = math.floor
 local ffi_cdef = ffi.cdef
 local ffi_new = ffi.new
@@ -270,7 +271,7 @@ function _M.new(params, options)
     else
         local self = setmetatable({ 
             redis = redis,
-            worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. random_hex(4),
+            worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. ngx_worker_id(),
             luascript = qless_luascript.new("qless", redis),
         }, mt)
 
