@@ -83,7 +83,7 @@ function _M.start(self, options)
             until not job
 
             q:deregister_workers({ q.worker_name })
-            
+
             local ok, err = ngx_timer_at(options.interval, worker)
             if not ok then
                 ngx_log(ngx_ERR, "failed to run worker: ", err)
