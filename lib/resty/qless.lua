@@ -145,7 +145,7 @@ end
 local _workers = {}
 
 function _workers.new(client)
-    return setmetatable({ 
+    return setmetatable({
         client = client,
         counts = _workers.counts,
     }, {
@@ -156,7 +156,7 @@ function _workers.new(client)
 end
 
 function _workers.counts(self)
-    local res = self.client:call("workers") 
+    local res = self.client:call("workers")
     return cjson_decode(res)
 end
 
@@ -166,10 +166,10 @@ end
 local _queues = {}
 
 function _queues.new(client)
-    return setmetatable({ 
+    return setmetatable({
         client = client,
         counts = _queues.counts,
-    }, { 
+    }, {
         __index = function(t, k)
             local q = qless_queue.new(k, t.client)
             rawset(t, k, q)
@@ -179,7 +179,7 @@ function _queues.new(client)
 end
 
 function _queues.counts(self)
-    local res = self.client:call("queues") 
+    local res = self.client:call("queues")
     return cjson_decode(res)
 end
 
@@ -194,7 +194,7 @@ function _events.new(params)
 
     if not params then params = {} end
     setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
-    
+
     if params.redis_client then
         redis = params.redis_client
     else
@@ -269,7 +269,7 @@ function _M.new(params, options)
     if not redis then
         return nil, err
     else
-        local self = setmetatable({ 
+        local self = setmetatable({
             redis = redis,
             worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. ngx_worker_id(),
             luascript = qless_luascript.new("qless", redis),
@@ -290,7 +290,7 @@ end
 
 
 function _M.redis_close(self)
-    self.redis:set_keepalive() 
+    self.redis:set_keepalive()
 end
 
 

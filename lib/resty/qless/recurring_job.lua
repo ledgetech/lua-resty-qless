@@ -13,7 +13,7 @@ local _M = {
     _VERSION = '0.01',
 }
 
-local mt = { 
+local mt = {
     -- We hide the real properties with __, and access them via the "update"
     -- setter method, to match the Ruby client syntax.
     __index = function (t, k)
