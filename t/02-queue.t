@@ -67,8 +67,8 @@ false
 [warn]
 
 
-=== TEST 2: Schedule some jobs, with and without data / options. 
-Two will be "waiting", one "scheduled" with a delay, and one depending on the 
+=== TEST 2: Schedule some jobs, with and without data / options.
+Two will be "waiting", one "scheduled" with a delay, and one depending on the
 scheduled one. None will be running.
 --- http_config eval: $::HttpConfig
 --- config
@@ -79,8 +79,8 @@ scheduled one. None will be running.
 
             q.queues["queue_1"]:put("job_klass_1")
             q.queues["queue_1"]:put("job_klass_2", { a = 1, b = 2})
-            local delayed_jid = q.queues["queue_1"]:put("job_klass_3", 
-                { a = 1 }, { delay = 1}) 
+            local delayed_jid = q.queues["queue_1"]:put("job_klass_3",
+                { a = 1 }, { delay = 1})
             q.queues["queue_1"]:put("job_klass_4", {}, { depends = { delayed_jid }})
 
             local counts = q.queues["queue_1"]:counts()
@@ -202,7 +202,7 @@ multiple:job_klass_\d
             ngx.say("scheduled:", counts["scheduled"])
 
             local jobs23 = queue:pop(2)
-            
+
             local counts = queue:counts()
             ngx.say("running:", counts["running"])
             ngx.say("waiting:", counts["waiting"])
