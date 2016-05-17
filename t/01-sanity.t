@@ -36,7 +36,6 @@ __DATA__
     location = /1 {
         content_by_lua '
             local qless = require "resty.qless"
-        ngx.log(ngx.DEBUG, redis_params.host .. ":" .. redis_params.port)
             local q, err = qless.new(redis_params)
             if not q then
                 ngx.log(ngx.ERR, err)
@@ -63,7 +62,7 @@ GET /1
             local r = redis.new()
             r:connect("127.0.0.1", redis_params.port)
             r:select(redis_params.db)
-            
+
             local q = qless.new({ redis_client = r })
             ngx.say(cjson.encode(q.queues:counts()))
         ';
