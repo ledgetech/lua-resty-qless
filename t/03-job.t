@@ -108,8 +108,8 @@ spawned_from:nil
             local qless = require "resty.qless"
             local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_3"]:put("job_klass_1", 
-                { a = 1 }, 
+            local jid = q.queues["queue_3"]:put("job_klass_1",
+                { a = 1 },
                 { priority = 5, tags = { "hello"} }
             )
 
@@ -121,7 +121,7 @@ spawned_from:nil
             end
 
             local after_triggered = false
-            job.after_requeue = function() 
+            job.after_requeue = function()
                 after_triggered = true
             end
 
@@ -254,13 +254,13 @@ ttl:60
             job.after_complete = function()
                 after_complete_triggered = true
             end
-            
+
             local counts = queue:counts()
             ngx.say("waiting:", counts.waiting)
             ngx.say("running:", counts.running)
 
             job:complete()
-            
+
             local counts = queue:counts()
             ngx.say("waiting:", counts.waiting)
             ngx.say("running:", counts.running)
@@ -277,17 +277,17 @@ ttl:60
             ngx.say("waiting:", counts2.waiting)
             ngx.say("scheduled:", counts2.scheduled)
             ngx.say("running:", counts2.running)
-            
+
             local job = queue:pop()
             job:complete("queue_7", { delay = 1 })
-            
+
             local counts2 = queue2:counts()
             ngx.say("waiting:", counts2.waiting)
             ngx.say("scheduled:", counts2.scheduled)
             ngx.say("running:", counts2.running)
 
             ngx.sleep(1)
-            
+
             local counts2 = queue2:counts()
             ngx.say("waiting:", counts2.waiting)
             ngx.say("scheduled:", counts2.scheduled)
@@ -306,7 +306,7 @@ ttl:60
             end
 
             job:cancel()
-            
+
             local counts2 = queue2:counts()
             ngx.say("waiting:", counts2.waiting)
             ngx.say("scheduled:", counts2.scheduled)
@@ -363,7 +363,7 @@ after_cancel_triggered:true
 
             local job = queue:pop()
             job:track()
-            
+
             local tracked = q.jobs:tracked()
             ngx.say("expired:", table.getn(tracked.expired))
             ngx.say("jobs:", table.getn(tracked.jobs))
@@ -371,7 +371,7 @@ after_cancel_triggered:true
             ngx.say("jid_match:", tracked.jobs[1].jid == jid)
 
             job:untrack()
-            
+
             local tracked = q.jobs:tracked()
             ngx.say("expired:", table.getn(tracked.expired))
             ngx.say("jobs:", table.getn(tracked.jobs))
@@ -408,10 +408,10 @@ jobs:0
 
             local job = queue:pop()
             job:tag("testtag", "testtag2")
-            
+
             local tagged = q.jobs:tagged("testtag")
             ngx.say("total:", tagged.total)
-            
+
             local tagged = q.jobs:tagged("testtag2")
             ngx.say("total:", tagged.total)
 
@@ -426,9 +426,9 @@ jobs:0
 
             -- Add tags during put
 
-            local jid = queue:put("job_klass_2", {}, 
+            local jid = queue:put("job_klass_2", {},
                 { tags = { "testtag3", "testtag4" }})
-            
+
             local tagged = q.jobs:tagged("testtag3")
             ngx.say("total:", tagged.total)
 
@@ -526,7 +526,7 @@ job2_depends_count:1
 
             job:log("captainslog")
             local job = q.jobs:get(jid1)
-            
+
             ngx.say("2_what:", job.raw_queue_history[2].what)
 
         ';
