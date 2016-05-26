@@ -238,7 +238,7 @@ end
 
 
 local _M = {
-    _VERSION = '0.05',
+    _VERSION = '0.06',
 }
 
 local mt = { __index = _M }
