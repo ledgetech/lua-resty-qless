@@ -20,8 +20,8 @@ Requirements
 ============
 
 * Redis >= 2.8.x
-* OpenResty >= 1.7.x
-* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.01
+* OpenResty >= 1.9.x
+* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.03
 
 
 Philosophy and Nomenclature
