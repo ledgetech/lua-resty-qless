@@ -1,9 +1,7 @@
-# vim:set ft= ts=4 sw=4 et:
-
 use Test::Nginx::Socket;
 use Cwd qw(cwd);
 
-plan tests => repeat_each() * (blocks() * 3) + 1;
+plan tests => repeat_each() * (blocks() * 3) + 2;
 
 my $pwd = cwd();
 
@@ -27,18 +25,26 @@ our $HttpConfig = qq{
 
         function sum.perform(job)
             local data = job.data
-            if not data or #data == 0 then
+
+            if data.cancel then
                 job:cancel()
-                return nil
+                return
+            end
+
+            if not data or not data.numbers or #data.numbers == 0 then
+                return nil, "job-error", "no data provided"
             end
 
             local sum = 0
-            for _,v in ipairs(data) do
+            for _,v in ipairs(data.numbers) do
                 sum = sum + v
             end
 
             ngx.log(ngx.NOTICE, "Sum: ", sum)
-            return true
+
+            if data.autocomplete then
+                job:complete()
+            end
         end
 
         package.loaded["testtasks.sum"] = sum
@@ -55,7 +61,7 @@ our $HttpConfig = qq{
             concurrency = 4,
             reserver = "ordered",
             queues = { "queue_14" },
-        }) 
+        })
 
 
         local worker_mw = Qless_Worker.new(redis_params)
@@ -86,7 +92,7 @@ __DATA__
             local qless = require "resty.qless"
             local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_14"]:put("testtasks.sum", { 1, 2, 3, 4 })
+            local jid = q.queues["queue_14"]:put("testtasks.sum", { numbers = { 1, 2, 3, 4 } })
             ngx.sleep(1)
 
             local job = q.jobs:get(jid)
@@ -109,7 +115,7 @@ complete
             local qless = require "resty.qless"
             local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_15"]:put("testtasks.sum", { 1, 2, 3, 4 })
+            local jid = q.queues["queue_15"]:put("testtasks.sum", { numbers = { 1, 2, 3, 4 } })
             ngx.sleep(1)
 
             local job = q.jobs:get(jid)
@@ -126,7 +132,36 @@ qr/Middleware stop/,
 qr/Middleware start/]
 
 
-=== TEST 3: Test a job can cancel itself if data is bad
+=== TEST 3: Test a job can cancel itself
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new(redis_params)
+
+            local jid = q.queues["queue_14"]:put("testtasks.sum", {
+                cancel = true
+            })
+            ngx.sleep(1)
+
+            local job = q.jobs:get(jid)
+            if job then
+                ngx.say(job.state)
+            else
+                ngx.say("canceled")
+            end
+        ';
+    }
+--- request
+GET /1
+--- response_body
+canceled
+--- no_error_log
+[error]
+
+
+=== TEST 3b: Test a job is failed and logs the error if data is bad
 --- http_config eval: $::HttpConfig
 --- config
     location = /1 {
@@ -148,4 +183,34 @@ qr/Middleware start/]
 --- request
 GET /1
 --- response_body
-canceled
+failed
+--- error_log eval
+[qr/Got job-error failure from testtasks\.sum \([a-f0-9]{32} \/ queue_14 \/ running\)/]
+
+
+=== TEST 4: Test a job can complete itself without tripping up the worker
+--- http_config eval: $::HttpConfig
+--- config
+    location = /1 {
+        content_by_lua '
+            local qless = require "resty.qless"
+            local q = qless.new(redis_params)
+
+            local jid = q.queues["queue_14"]:put("testtasks.sum", {
+                numbers = { 1, 2, 3, 4},
+                autocomplete = true
+            })
+            ngx.sleep(1)
+
+            local job = q.jobs:get(jid)
+            if job then
+                ngx.say(job.state)
+            end
+        ';
+    }
+--- request
+GET /1
+--- response_body
+complete
+--- no_error_log
+[error]
