@@ -19,7 +19,7 @@ This module should be considered experimental.
 Requirements
 ============
 
-* Redis >= 2.8.x
+* Redis >= 2.8.x < 3.2.x (newer Redis versions require a patch to qless-core)
 * OpenResty >= 1.9.x
 * [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.03
 
