@@ -12,7 +12,7 @@ local io_open = io.open
 
 
 local _M = {
-    _VERSION = '0.01',
+    _VERSION = '0.08',
 }
 
 local mt = { __index = _M }
