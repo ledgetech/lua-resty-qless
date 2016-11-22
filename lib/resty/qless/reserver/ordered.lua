@@ -4,7 +4,7 @@ local ngx_ERR = ngx.ERR
 local ngx_INFO = ngx.INFO
 
 local _M = {
-    _VERSION = '0.01',
+    _VERSION = '0.08',
 }
 
 local mt = { __index = _M }

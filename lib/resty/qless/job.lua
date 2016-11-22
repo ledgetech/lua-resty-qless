@@ -10,7 +10,7 @@ local cjson_decode = cjson.decode
 
 
 local _M = {
-    _VERSION = '0.01',
+    _VERSION = '0.08',
 }
 
 local mt = {
@@ -162,7 +162,7 @@ function _M.fail(self, group, message)
     local res, err = self.client:call("fail",
         self.jid,
         self.client.worker_name,
-        group, message or "[no message]",
+        group or "[unknown group]", message or "[no message]",
         cjson_encode(self.data))
 
     if not res then

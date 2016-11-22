@@ -5,7 +5,7 @@ local math_random = math.random
 local math_randomseed = math.randomseed
 
 local _M = {
-    _VERSION = '0.01',
+    _VERSION = '0.08',
 }
 
 local mt = { __index = _M }

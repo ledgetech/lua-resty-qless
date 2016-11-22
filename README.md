@@ -19,7 +19,7 @@ This module should be considered experimental.
 Requirements
 ============
 
-* Redis >= 2.8.x
+* Redis >= 2.8.x < 3.2.x (newer Redis versions require a patch to qless-core)
 * OpenResty >= 1.9.x
 * [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.03
 
@@ -100,8 +100,16 @@ local _M = {}
 
 function _M.perform(job)
     -- job is an instance of Qless_Job and provides access to
-    -- job.data (which is a Lua table), a means to cancel the 
+    -- job.data (which is a Lua table), a means to cancel the
     -- job (job:cancel()), and more.
+
+    -- return "nil, err_type, err_msg" to indicate an unexpected failure
+
+    if not job.data then
+        return nil, "job-error", "data missing"
+    end
+
+    -- Do work
 end
 
 return _M

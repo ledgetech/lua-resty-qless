@@ -17,7 +17,7 @@ local co_yield = coroutine.yield
 
 
 local _M = {
-    _VERSION = '0.01',
+    _VERSION = '0.08',
 }
 
 local mt = { __index = _M }
@@ -73,11 +73,16 @@ function _M.start(self, options)
             repeat
                 local job = reserver:reserve()
                 if job then
-                    local res, err_type, err = self:perform(job)
-                    if res == true then
-                        job:complete()
-                    else
+                    local ok, err_type, err = self:perform(job)
+                    if not ok and err_type then
+                        -- err_type, err indicates the job "raised an exception"
                         job:fail(err_type, err)
+                        ngx_log(ngx_ERR, "Got ", err_type, " failure from ", job:description(), " \n", err)
+                    else
+                        -- Complete the job, unless its status has been changed already
+                        if not job.state_changed then
+                            job:complete()
+                        end
                     end
                 end
                 co_yield() -- The scheduler will resume us.
