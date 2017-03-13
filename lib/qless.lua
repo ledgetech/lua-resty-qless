@@ -1,4 +1,4 @@
--- Current SHA: cd7f5fb078539e62bd512acdde8c014a1d54a52f
+-- Current SHA: 13cf4159aaa159ad943872ad24904a267efacbde
 -- This is a generated file
 local Qless = {
   ns = 'ql:'
@@ -150,7 +150,7 @@ function Qless.tag(now, command, ...)
 
       for i=2,#arg do
         local tag = arg[i]
-        if _tags[tag] == nil then
+        if _tags[tag] == nil or _tags[tag] == false then
           _tags[tag] = true
           table.insert(tags, tag)
         end
@@ -214,7 +214,7 @@ function Qless.cancel(...)
 
   for i, jid in ipairs(arg) do
     for j, dep in ipairs(dependents[jid]) do
-      if dependents[dep] == nil then
+      if dependents[dep] == nil or dependents[dep] == false then
         error('Cancel(): ' .. jid .. ' is a dependency of ' .. dep ..
            ' but is not mentioned to be canceled')
       end
@@ -830,7 +830,7 @@ function QlessJob:priority(priority)
 
   local queue = redis.call('hget', QlessJob.ns .. self.jid, 'queue')
 
-  if queue == nil then
+  if queue == nil or queue == false then
     error('Priority(): Job ' .. self.jid .. ' does not exist')
   elseif queue == '' then
     redis.call('hset', QlessJob.ns .. self.jid, 'priority', priority)
@@ -857,7 +857,7 @@ end
 function QlessJob:timeout(now)
   local queue_name, state, worker = unpack(redis.call('hmget',
     QlessJob.ns .. self.jid, 'queue', 'state', 'worker'))
-  if queue_name == nil then
+  if queue_name == nil or queue_name == false then
     error('Timeout(): Job ' .. self.jid .. ' does not exist')
   elseif state ~= 'running' then
     error('Timeout(): Job ' .. self.jid .. ' not running')
@@ -928,7 +928,7 @@ function QlessJob:history(now, what, item)
     if count > 0 then
       local obj = redis.call('lpop', QlessJob.ns .. self.jid .. '-history')
       redis.call('ltrim', QlessJob.ns .. self.jid .. '-history', -count + 2, -1)
-      if obj ~= nil then
+      if obj ~= nil and obj ~= false then
         redis.call('lpush', QlessJob.ns .. self.jid .. '-history', obj)
       end
     end
@@ -1274,7 +1274,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
     local original = redis.call(
       'smembers', QlessJob.ns .. jid .. '-dependencies')
     for _, dep in pairs(original) do
-      if new[dep] == nil then
+      if new[dep] == nil or new[dep] == false then
         redis.call('srem', QlessJob.ns .. dep .. '-dependents'  , jid)
         redis.call('srem', QlessJob.ns .. jid .. '-dependencies', dep)
       end
@@ -1747,7 +1747,7 @@ function QlessRecurringJob:tag(...)
     local _tags = {}
     for i,v in ipairs(tags) do _tags[v] = true end
 
-    for i=1,#arg do if _tags[arg[i]] == nil then table.insert(tags, arg[i]) end end
+    for i=1,#arg do if _tags[arg[i]] == nil or _tags[arg[i]] == false then table.insert(tags, arg[i]) end end
 
     tags = cjson.encode(tags)
     redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
