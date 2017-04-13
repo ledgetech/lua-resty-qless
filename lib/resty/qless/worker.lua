@@ -103,6 +103,8 @@ function _M.start(self, options)
             ngx_log(ngx_ERR, "failed to start worker: ", err)
         end
     end
+
+    return true
 end
 
 
