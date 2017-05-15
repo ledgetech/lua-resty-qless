@@ -1,5 +1,4 @@
 local ffi = require "ffi"
-local redis_mod = require "resty.redis"
 local redis_connector = require "resty.redis.connector"
 local cjson = require "cjson"
 
@@ -59,10 +58,32 @@ local function gethostname()
 end
 
 
-local DEFAULT_REDIS_PARAMS = {
-    host = "127.0.0.1",
-    port = 6379,
-}
+-- Returns a connected lua-resty-redis instance
+--
+-- The Redis connection params are as per lua-resty-redis-connector, except:
+--
+--  1)  if `params.redis_client` exists and is a table, return this 
+--      pre-connected redis_client
+--  2) if `params.get_redis_client` exists and is a function, call this function
+--      to return a connected redis instance.
+--
+--  Otherwise lua-resty-redis-connector is used to create a new connection.
+local function get_redis_connection(params)
+    local redis, err
+    if params.redis_client then
+        redis = params.redis_client
+    elseif type(params.get_redis_client) == "function" then
+        redis, err = params.get_redis_client()
+    else
+        redis, err = redis_connector.new(params):connect()
+    end
+
+    if not redis then
+        return nil, err
+    else
+        return redis
+    end
+end
 
 
 -- Jobs, to be accessed via qless.jobs.
@@ -190,18 +211,7 @@ local _events_mt = { __index = _events }
 
 
 function _events.new(params)
-    local redis, err
-
-    if not params then params = {} end
-    setmetatable(params, { __index = DEFAULT_REDIS_PARAMS })
-
-    if params.redis_client then
-        redis = params.redis_client
-    else
-        local rc = redis_connector.new()
-        redis, err = rc:connect(params)
-    end
-
+    local redis, err = get_redis_connection(params)
     if not redis then
         return nil, err
     else
@@ -244,28 +254,8 @@ local _M = {
 local mt = { __index = _M }
 
 
-function _M.new(params, options)
-    local redis, err
-
-    if params.redis_client then
-        redis = params.redis_client
-    else
-        local rc = redis_connector.new()
-        if options then
-            if options.connect_timeout then
-                rc:set_connect_timeout(options.connect_timeout)
-            end
-            if options.read_timeout then
-                rc:set_read_timeout(options.read_timeout)
-            end
-            if options.connection_options then
-                rc:set_connection_options(options.connection_options)
-            end
-        end
-
-        redis, err = rc:connect(params)
-    end
-
+function _M.new(params) --, options)
+    local redis, err = get_redis_connection(params)
     if not redis then
         return nil, err
     else
