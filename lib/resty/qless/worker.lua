@@ -30,11 +30,12 @@ local DEFAULT_OPTIONS = {
 }
 
 
-function _M.new(redis_params, connection_options)
+function _M.new(params) --redis_params, connection_options)
     return setmetatable({
-        redis_params = redis_params,
-        redis_connection_options = connection_options,
-        middleware = nil,
+        params = params,
+   --     redis_params = redis_params,
+    --    redis_connection_options = connection_options,
+      --  middleware = nil,
     }, mt)
 end
 
@@ -44,7 +45,7 @@ function _M.start(self, options)
 
     local function worker(premature)
         if not premature then
-            local q, err = qless.new(self.redis_params, self.redis_connection_options)
+            local q, err = qless.new(self.params)
             if not q then
                 ngx_log(ngx_ERR, "qless could not connect to Redis: ", err)
 
