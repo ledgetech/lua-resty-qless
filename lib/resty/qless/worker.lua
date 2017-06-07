@@ -30,12 +30,9 @@ local DEFAULT_OPTIONS = {
 }
 
 
-function _M.new(params) --redis_params, connection_options)
+function _M.new(params)
     return setmetatable({
         params = params,
-   --     redis_params = redis_params,
-    --    redis_connection_options = connection_options,
-      --  middleware = nil,
     }, mt)
 end
 
