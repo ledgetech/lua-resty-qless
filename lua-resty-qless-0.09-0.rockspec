@@ -1,8 +1,8 @@
 package = "lua-resty-qless"
-version = "0.08-0"
+version = "0.09-0"
 source  = {
   url = "git://github.com/pintsized/lua-resty-qless",
-  tag = "v0.08"
+  tag = "v0.09"
 }
 description = {
   summary    = "Lua binding to Qless (Queue / Pipeline management) for OpenResty",

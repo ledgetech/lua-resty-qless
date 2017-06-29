@@ -17,7 +17,7 @@ local co_yield = coroutine.yield
 
 
 local _M = {
-    _VERSION = '0.08',
+    _VERSION = '0.09',
 }
 
 local mt = { __index = _M }
@@ -103,6 +103,8 @@ function _M.start(self, options)
             ngx_log(ngx_ERR, "failed to start worker: ", err)
         end
     end
+
+    return true
 end
 
 
