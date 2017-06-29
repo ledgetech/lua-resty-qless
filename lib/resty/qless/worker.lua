@@ -17,7 +17,7 @@ local co_yield = coroutine.yield
 
 
 local _M = {
-    _VERSION = '0.08',
+    _VERSION = '0.09',
 }
 
 local mt = { __index = _M }
