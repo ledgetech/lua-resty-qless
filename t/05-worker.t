@@ -53,7 +53,6 @@ our $HttpConfig = qq{
 
 
     init_worker_by_lua '
-        require("luacov.runner").init()
         local Qless_Worker = require "resty.qless.worker"
 
         local worker = Qless_Worker.new(redis_params)
