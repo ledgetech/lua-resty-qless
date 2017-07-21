@@ -118,3 +118,53 @@ true
 --- no_error_log
 [error]
 [warn]
+
+
+=== TEST 4: Connection methods
+--- http_config eval: $::HttpConfig
+--- config
+location = /1 {
+    lua_socket_log_errors Off;
+    content_by_lua_block {
+        -- bad connection params
+        local params = {
+            port = 1233,
+        }
+
+        local qless, err = require("resty.qless").new(params)
+        assert(not qless and err == "connection refused",
+            "connection should be refused")
+
+        function get_connection()
+            ngx.say("using connection callback")
+            return require("resty.redis.connector").new({
+                port = redis_params.port
+            }):connect()
+        end
+
+        -- get_redis_client should override bad config
+        params.get_redis_client = get_connection
+
+        local qless, err = require("resty.qless").new(params)
+        assert(qless and not err,
+            "callback should be used")
+
+        -- direct already established client should overrid callback
+        params.redis_client = require("resty.redis.connector").new({
+            port = redis_params.port
+        }):connect()
+
+        local qless, err = require("resty.qless").new(params)
+        assert(qless and not err,
+            "existing client should be used")
+
+    }
+}
+--- request
+GET /1
+--- response_body
+using connection callback
+--- no_error_log
+[error]
+[warn]
+--- ONLY
