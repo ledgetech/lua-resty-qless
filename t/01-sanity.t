@@ -1,7 +1,5 @@
-use Test::Nginx::Socket;
+use Test::Nginx::Socket 'no_plan';
 use Cwd qw(cwd);
-
-plan tests => repeat_each() * (blocks() * 4);
 
 my $pwd = cwd();
 
@@ -85,30 +83,30 @@ GET /1
 === TEST 3: Set / get / clear config.
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+location = /1 {
+    content_by_lua_block {
+        local qless = require "resty.qless"
+        local q = qless.new(redis_params)
 
-            local all = q:config_get_all()
+        local all = q:config_get_all()
 
-            -- We can get options from all
-            ngx.say(all["heartbeat"])
-            ngx.say(all["grace-period"])
+        -- We can get options from all
+        ngx.say(all["heartbeat"])
+        ngx.say(all["grace-period"])
 
-            -- They match individual calls to get
-            ngx.say(q:config_get("heartbeat") == all["heartbeat"])
+        -- They match individual calls to get
+        ngx.say(q:config_get("heartbeat") == all["heartbeat"])
 
-            -- We can change them
-            q:config_set("heartbeat", 30)
-            local heartbeat = q:config_get("heartbeat")
-            ngx.say(heartbeat)
+        -- We can change them
+        q:config_set("heartbeat", 30)
+        local heartbeat = q:config_get("heartbeat")
+        ngx.say(heartbeat)
 
-            -- We can reset them to defaults
-            q:config_clear("heartbeat")
-            ngx.say(q:config_get("heartbeat") == all["heartbeat"])
-        ';
+        -- We can reset them to defaults
+        q:config_clear("heartbeat")
+        ngx.say(q:config_get("heartbeat") == all["heartbeat"])
     }
+}
 --- request
 GET /1
 --- response_body_like
