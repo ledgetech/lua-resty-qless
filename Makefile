@@ -20,7 +20,10 @@ install: all
 			$(INSTALL) lib/resty/qless/*.lua $(DESTDIR)/$(LUA_LIB_DIR)/resty/qless/
 
 test: all
+		util/lua-releng
 		-@echo "Flushing Redis DB"
 		@$(REDIS_CLI) flushdb
-		util/lua-releng
+		@rm -f luacov.stats.out
 		PATH=$(OPENRESTY_PREFIX)/nginx/sbin:$$PATH TEST_REDIS_DATABASE=$(TEST_REDIS_DATABASE) TEST_REDIS_PORT=$(TEST_REDIS_PORT) TEST_NGINX_NO_SHUFFLE=1 prove -I../test-nginx/lib -r $(TEST_FILE)
+		@luacov
+		@tail -14 luacov.report.out

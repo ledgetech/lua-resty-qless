@@ -12,13 +12,15 @@ our $HttpConfig = qq{
     lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua_block {
+        require("luacov.runner").init()
+
         cjson = require "cjson"
         redis_params = {
             host = "127.0.0.1",
             port = $ENV{TEST_REDIS_PORT},
             db = $ENV{TEST_REDIS_DATABASE},
         }
-        }
+    }
 };
 
 no_long_string();

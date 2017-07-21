@@ -1,0 +1,5 @@
+modules = {
+    ["resty.qless"] = "lib/resty/qless.lua",
+    ["resty.qless.*"] = "lib",
+    ["resty.qless.reserver.*"] = "lib",
+}
