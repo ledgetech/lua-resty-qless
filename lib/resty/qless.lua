@@ -62,7 +62,7 @@ end
 --
 -- The Redis connection params are as per lua-resty-redis-connector, except:
 --
---  1)  if `params.redis_client` exists and is a table, return this 
+--  1)  if `params.redis_client` exists and is a table, return this
 --      pre-connected redis_client
 --  2) if `params.get_redis_client` exists and is a function, call this function
 --      to return a connected redis instance.

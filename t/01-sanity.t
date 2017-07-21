@@ -64,7 +64,7 @@ location = /1 {
         local q = assert(qless.new({ redis_client = get_redis_client() }),
             "qless.new with redis_client should return positively")
         ngx.say(cjson.encode(q.queues:counts()))
-        
+
         local q = assert(qless.new({ get_redis_client = get_redis_client }),
             "qless.new with get_redis_client should return positively")
         ngx.say(cjson.encode(q.queues:counts()))
