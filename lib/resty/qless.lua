@@ -75,7 +75,7 @@ local function get_redis_connection(params)
     elseif type(params.get_redis_client) == "function" then
         redis, err = params.get_redis_client()
     else
-        local rc, err = redis_connector.new(params)
+        local rc, e = redis_connector.new(params)
         if not rc then return nil, err end
         redis, err = rc:connect()
     end
