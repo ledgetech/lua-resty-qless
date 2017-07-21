@@ -1,5 +1,3 @@
-# vim:set ft= ts=4 sw=4 et:
-
 use Test::Nginx::Socket;
 use Cwd qw(cwd);
 
@@ -7,21 +5,20 @@ plan tests => repeat_each() * (blocks() * 4);
 
 my $pwd = cwd();
 
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
     lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
-    init_by_lua '
+    init_by_lua_block {
         cjson = require "cjson"
         redis_params = {
             host = "127.0.0.1",
             port = $ENV{TEST_REDIS_PORT},
             db = $ENV{TEST_REDIS_DATABASE},
         }
-    ';
+        }
 };
 
 no_long_string();
@@ -33,16 +30,14 @@ __DATA__
 === TEST 1: Prove we can load the module and call a script.
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q, err = qless.new(redis_params)
-            if not q then
-                ngx.log(ngx.ERR, err)
-            end
-            ngx.say(cjson.encode(q.queues:counts()))
-        ';
+location = /1 {
+    content_by_lua_block {
+        local q, err = assert(require("resty.qless").new(redis_params),
+            "new should return positively")
+
+        ngx.say(cjson.encode(q.queues:counts()))
     }
+}
 --- request
 GET /1
 --- response_body
@@ -52,24 +47,33 @@ GET /1
 [warn]
 
 
-=== TEST 2: Prove we can load using an already established Redis connection.
+=== TEST 2: Load using externally connected redis.
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local redis = require "resty.redis"
-            local r = redis.new()
-            r:connect("127.0.0.1", redis_params.port)
-            r:select(redis_params.db)
+location = /1 {
+    content_by_lua_block {
+        function get_redis_client()
+            return require("resty.redis.connector").new({
+                port = redis_params.port,
+                db = redis_params.db
+            }):connect()
+        end
 
-            local q = qless.new({ redis_client = r })
-            ngx.say(cjson.encode(q.queues:counts()))
-        ';
+        local qless = require("resty.qless")
+
+        local q = assert(qless.new({ redis_client = get_redis_client() }),
+            "qless.new with redis_client should return positively")
+        ngx.say(cjson.encode(q.queues:counts()))
+        
+        local q = assert(qless.new({ get_redis_client = get_redis_client }),
+            "qless.new with get_redis_client should return positively")
+        ngx.say(cjson.encode(q.queues:counts()))
     }
+}
 --- request
 GET /1
 --- response_body
+{}
 {}
 --- no_error_log
 [error]
