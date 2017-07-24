@@ -142,8 +142,14 @@ location = /1 {
             }):connect()
         end
 
+        function close_connection(redis)
+            ngx.say("using close connection callback")
+            return redis:set_keepalive()
+        end
+
         -- get_redis_client should override bad config
         params.get_redis_client = get_connection
+        params.close_redis_client = close_connection
 
         local qless, err = require("resty.qless").new(params)
         assert(qless and not err,
@@ -157,6 +163,7 @@ location = /1 {
         params.redis_client = require("resty.redis.connector").new({
             port = redis_params.port
         }):connect()
+        params.close_redis_client = nil
 
         local qless, err = require("resty.qless").new(params)
         assert(qless and not err,
@@ -196,6 +203,7 @@ location = /1 {
 GET /1
 --- response_body
 using connection callback
+using close connection callback
 --- no_error_log
 [error]
 [warn]

@@ -296,12 +296,19 @@ local function set_keepalive(self, keepalive_timeout, keepalive_poolsize)
         return nil, "redis is not connected"
     end
 
+    local params = self.params
+
     -- If we're given params, close the redis connection directly
     if keepalive_timeout or keepalive_poolsize then
         return redis:set_keepalive(
             keepalive_timeout,
             keepalive_poolsize
         )
+    elseif params.close_redis_client and
+        type(params.close_redis_client == "function") then
+
+        -- Use the callback given to us
+        return params.close_redis_client(redis)
     elseif self.redis_connector then
         -- Use redis connector keepalive params (or defaults)
         return self.redis_connector:set_keepalive(redis)
