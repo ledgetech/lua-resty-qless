@@ -10,7 +10,6 @@ our $HttpConfig = qq{
     lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
     init_by_lua_block {
-        require("luacov.runner").init()
         cjson = require "cjson"
         redis_params = {
             host = "127.0.0.1",
@@ -20,10 +19,10 @@ our $HttpConfig = qq{
     }
 
     init_worker_by_lua_block {
-        require("luacov.runner").init()
-
         local subscribe = function(premature)
             if not premature then
+                require("luacov.runner").init()
+
                 local qless = require "resty.qless"
                 local events = qless.events(redis_params)
 
