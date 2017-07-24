@@ -1,18 +1,16 @@
-use Test::Nginx::Socket;
+use Test::Nginx::Socket 'no_plan';
 use Cwd qw(cwd);
-
-plan tests => repeat_each() * (blocks() * 3) + 2;
 
 my $pwd = cwd();
 
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_REDIS_PORT} ||= 6379;
 $ENV{TEST_REDIS_DATABASE} ||= 1;
 
 our $HttpConfig = qq{
     lua_package_path "$pwd/../lua-resty-redis-connector/lib/?.lua;$pwd/lib/?.lua;;";
     error_log logs/error.log debug;
-    init_by_lua '
+    init_by_lua_block {
+        require("luacov.runner").init()
         cjson = require "cjson"
         redis_params = {
             host = "127.0.0.1",
@@ -48,10 +46,10 @@ our $HttpConfig = qq{
         end
 
         package.loaded["testtasks.sum"] = sum
-    ';
+    }
 
 
-    init_worker_by_lua '
+    init_worker_by_lua_block {
         local Qless_Worker = require "resty.qless.worker"
 
         local worker = Qless_Worker.new(redis_params)
@@ -75,7 +73,7 @@ our $HttpConfig = qq{
         worker_mw:start({
             queues = { "queue_15" },
         })
-    ';
+    }
 };
 
 no_long_string();
@@ -87,18 +85,18 @@ __DATA__
 === TEST 1: Test a job runs and gets completed.
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+location = /1 {
+    content_by_lua_block {
+        local qless = require "resty.qless"
+        local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_14"]:put("testtasks.sum", { numbers = { 1, 2, 3, 4 } })
-            ngx.sleep(1)
+        local jid = q.queues["queue_14"]:put("testtasks.sum", { numbers = { 1, 2, 3, 4 } })
+        ngx.sleep(1)
 
-            local job = q.jobs:get(jid)
-            ngx.say(job.state)
-        ';
+        local job = q.jobs:get(jid)
+        ngx.say(job.state)
     }
+}
 --- request
 GET /1
 --- response_body
@@ -110,18 +108,18 @@ complete
 === TEST 2: Test middleware runs before and after job
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+location = /1 {
+    content_by_lua_block {
+        local qless = require "resty.qless"
+        local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_15"]:put("testtasks.sum", { numbers = { 1, 2, 3, 4 } })
-            ngx.sleep(1)
+        local jid = q.queues["queue_15"]:put("testtasks.sum", { numbers = { 1, 2, 3, 4 } })
+        ngx.sleep(1)
 
-            local job = q.jobs:get(jid)
-            ngx.say(job.state)
-        ';
+        local job = q.jobs:get(jid)
+        ngx.say(job.state)
     }
+}
 --- request
 GET /1
 --- response_body
@@ -135,24 +133,24 @@ qr/Middleware start/]
 === TEST 3: Test a job can cancel itself
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+location = /1 {
+    content_by_lua_block {
+        local qless = require "resty.qless"
+        local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_14"]:put("testtasks.sum", {
-                cancel = true
-            })
-            ngx.sleep(1)
+        local jid = q.queues["queue_14"]:put("testtasks.sum", {
+            cancel = true
+        })
+        ngx.sleep(1)
 
-            local job = q.jobs:get(jid)
-            if job then
-                ngx.say(job.state)
-            else
-                ngx.say("canceled")
-            end
-        ';
+        local job = q.jobs:get(jid)
+        if job then
+            ngx.say(job.state)
+        else
+            ngx.say("canceled")
+        end
     }
+}
 --- request
 GET /1
 --- response_body
@@ -164,22 +162,22 @@ canceled
 === TEST 3b: Test a job is failed and logs the error if data is bad
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+location = /1 {
+    content_by_lua_block {
+        local qless = require "resty.qless"
+        local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_14"]:put("testtasks.sum")
-            ngx.sleep(1)
+        local jid = q.queues["queue_14"]:put("testtasks.sum")
+        ngx.sleep(1)
 
-            local job = q.jobs:get(jid)
-            if job then
-                ngx.say(job.state)
-            else
-                ngx.say("canceled")
-            end
-        ';
+        local job = q.jobs:get(jid)
+        if job then
+            ngx.say(job.state)
+        else
+            ngx.say("canceled")
+        end
     }
+}
 --- request
 GET /1
 --- response_body
@@ -191,23 +189,23 @@ failed
 === TEST 4: Test a job can complete itself without tripping up the worker
 --- http_config eval: $::HttpConfig
 --- config
-    location = /1 {
-        content_by_lua '
-            local qless = require "resty.qless"
-            local q = qless.new(redis_params)
+location = /1 {
+    content_by_lua_block {
+        local qless = require "resty.qless"
+        local q = qless.new(redis_params)
 
-            local jid = q.queues["queue_14"]:put("testtasks.sum", {
-                numbers = { 1, 2, 3, 4},
-                autocomplete = true
-            })
-            ngx.sleep(1)
+        local jid = q.queues["queue_14"]:put("testtasks.sum", {
+            numbers = { 1, 2, 3, 4},
+            autocomplete = true
+        })
+        ngx.sleep(1)
 
-            local job = q.jobs:get(jid)
-            if job then
-                ngx.say(job.state)
-            end
-        ';
+        local job = q.jobs:get(jid)
+        if job then
+            ngx.say(job.state)
+        end
     }
+}
 --- request
 GET /1
 --- response_body

@@ -7,7 +7,7 @@ INSTALL ?= install
 TEST_FILE ?= t
 
 TEST_REDIS_PORT ?= 6379
-TEST_REDIS_DATABASE ?= 1
+TEST_REDIS_DATABASE ?= 6
 
 REDIS_CLI	:= redis-cli -p $(TEST_REDIS_PORT) -n $(TEST_REDIS_DATABASE)
 
@@ -20,7 +20,10 @@ install: all
 			$(INSTALL) lib/resty/qless/*.lua $(DESTDIR)/$(LUA_LIB_DIR)/resty/qless/
 
 test: all
+		util/lua-releng
 		-@echo "Flushing Redis DB"
 		@$(REDIS_CLI) flushdb
+		@rm -f luacov.stats.out
 		PATH=$(OPENRESTY_PREFIX)/nginx/sbin:$$PATH TEST_REDIS_DATABASE=$(TEST_REDIS_DATABASE) TEST_REDIS_PORT=$(TEST_REDIS_PORT) TEST_NGINX_NO_SHUFFLE=1 prove -I../test-nginx/lib -r $(TEST_FILE)
-		#util/lua-releng
+		@luacov
+		@tail -14 luacov.report.out

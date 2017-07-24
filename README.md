@@ -21,7 +21,7 @@ Requirements
 
 * Redis >= 2.8.x
 * OpenResty >= 1.9.x
-* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.03
+* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.04
 
 
 Philosophy and Nomenclature
@@ -72,23 +72,43 @@ Features
   completed, failed, put, popped, etc. Use these events to get notified of
   progress on jobs you're interested in.
 
-Enqueing Jobs
+Connecting
 =============
 First things first, require `resty.qless` and create a client, specifying your Redis connection details.
 
 ```lua
-local resty_qless = require "resty.qless"
-
--- Default parameters shown below.
-local qless = resty_qless.new({
-    -- host = "127.0.0.1",
-    -- port = 6379,
-    -- connect_timeout = 100,
-    -- read_timeout = 5000,
-    -- keepalive_timeout = nil,
-    -- keepalive_poolsize = nil,
+local qless = require("resty.qless").new({
+    host = "127.0.0.1",
+    port = 6379,
 })
 ```
+
+Parameters passed to `new` are forwarded to [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector). Please review the documentation there for connection options, including how to use Redis Sentinel etc.
+
+Additionally, if your application has a Redis connection that you wish to reuse, there are two ways you can integrate this:
+
+1) Using an already established connection directly
+
+```lua
+local qless = require("resty.qless").new({
+    redis_client = my_redis,
+})
+```
+
+2) Providing callbacks for connecting and closing the connection
+
+```lua
+local qless = require("resty.qless").new({
+    get_redis_client = my_connection_callback,
+    close_redis_client = my_close_callback,
+})
+```
+
+When finished with Qless, you should call `qless:set_keepalive()` which will attempt to put Redis back on the keepalive pool, either using settings you provide directly, or via parameters sent to `lua-resty-redis-connector`, or by calling your `close_redis_client` callback.
+
+
+Enqueing Jobs
+=============
 
 Jobs themselves are modules, which must be loadable via `require` and provide a `perform` function, which accepts a single `job` argument.
 
