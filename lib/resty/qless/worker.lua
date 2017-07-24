@@ -55,9 +55,13 @@ function _M.start(self, options)
                 end
             end
 
-            local ok, reserver_type = pcall(require, "resty.qless.reserver." .. options.reserver)
+            local ok, reserver_type =
+                pcall(require, "resty.qless.reserver." .. options.reserver)
+
             if not ok then
-                ngx_log(ngx_ERR, "No such reserver: ", options.reserver, " - ", reserver_type)
+                ngx_log(ngx_ERR,
+                    "No such reserver: ", options.reserver, " - ", reserver_type)
+
                 return nil
             end
 
@@ -75,9 +79,13 @@ function _M.start(self, options)
                     if not ok and err_type then
                         -- err_type, err indicates the job "raised an exception"
                         job:fail(err_type, err)
-                        ngx_log(ngx_ERR, "Got ", err_type, " failure from ", job:description(), " \n", err)
+
+                        ngx_log(ngx_ERR,
+                            "Got ", err_type, " failure from ",
+                            job:description(), " \n", err)
                     else
-                        -- Complete the job, unless its status has been changed already
+                        -- Complete the job, unless its status has been changed
+                        -- already
                         if not job.state_changed then
                             job:complete()
                         end
@@ -87,6 +95,7 @@ function _M.start(self, options)
             until not job
 
             q:deregister_workers({ q.worker_name })
+            q:set_keepalive()
 
             local ok, err = ngx_timer_at(options.interval, worker)
             if not ok then
