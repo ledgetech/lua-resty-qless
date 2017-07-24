@@ -58,32 +58,17 @@ local function gethostname()
 end
 
 
--- Returns a connected lua-resty-redis instance
---
--- The Redis connection params are as per lua-resty-redis-connector, except:
---
---  1)  if `params.redis_client` exists and is a table, return this
+--  1)  if `params.redis_client` exists and is not an empty table, return this
 --      pre-connected redis_client
 --  2) if `params.get_redis_client` exists and is a function, call this function
 --      to return a connected redis instance.
 --
 --  Otherwise lua-resty-redis-connector is used to create a new connection.
-local function get_redis_connection(params)
-    local redis, err
-    if params.redis_client then
-        redis = params.redis_client
+local function get_existing_redis_connection(params)
+    if params.redis_client and next(params.redis_client) then
+        return params.redis_client
     elseif type(params.get_redis_client) == "function" then
-        redis, err = params.get_redis_client()
-    else
-        local rc, e = redis_connector.new(params)
-        if not rc then return nil, err end
-        redis, err = rc:connect()
-    end
-
-    if not redis then
-        return nil, err
-    else
-        return redis
+        return params.get_redis_client()
     end
 end
 
@@ -213,14 +198,24 @@ local _events_mt = { __index = _events }
 
 
 function _events.new(params)
-    local redis, err = get_redis_connection(params)
+    -- First try to pull an existing connection from the params
+    local redis = get_existing_redis_connection(params)
+
+    -- If not, use redis connector to create one
+    local rc
     if not redis then
-        return nil, err
-    else
-        return setmetatable({
-            redis = redis,
-        }, _events_mt)
+        local err
+        rc, err = redis_connector.new(params)
+        if not rc then return nil, err end
+
+        redis, err = rc:connect()
+        if not redis then return nil, err end
     end
+
+    return setmetatable({
+        redis = redis,
+        redis_connector = rc,
+    }, _events_mt)
 end
 
 
@@ -256,23 +251,37 @@ local _M = {
 local mt = { __index = _M }
 
 
-function _M.new(params) --, options)
-    local redis, err = get_redis_connection(params)
+function _M.new(params)
+    -- First try to pull an existing connection from the params
+    local redis = get_existing_redis_connection(params)
+
+    -- If not, use redis connector to create one
+    local rc
     if not redis then
-        return nil, err
-    else
-        local self = setmetatable({
-            redis = redis,
-            worker_name = gethostname() .. "-nginx-" .. ngx_worker_pid() .. "-" .. ngx_worker_id(),
-            luascript = qless_luascript.new("qless", redis),
-        }, mt)
+        local err
+        rc, err = redis_connector.new(params)
+        if not rc then return nil, err end
 
-        self.workers = _workers.new(self)
-        self.queues = _queues.new(self)
-        self.jobs = _jobs.new(self)
-
-        return self
+        redis, err = rc:connect()
+        if not redis then return nil, err end
     end
+
+    local worker_name = gethostname() .. "-nginx-" ..
+        tostring(ngx_worker_pid()) .. "-" .. tostring(ngx_worker_id())
+
+    local self = setmetatable({
+        params = params,
+        redis = redis,
+        redis_connector = rc,
+        worker_name = worker_name,
+        luascript = qless_luascript.new("qless", redis),
+    }, mt)
+
+    self.workers = _workers.new(self)
+    self.queues = _queues.new(self)
+    self.jobs = _jobs.new(self)
+
+    return self
 end
 
 
@@ -281,9 +290,29 @@ function _M.events(params)
 end
 
 
-function _M.redis_close(self)
-    self.redis:set_keepalive()
+local function set_keepalive(self, keepalive_timeout, keepalive_poolsize)
+    local redis = self.redis
+    if not redis or not redis.set_keepalive then
+        return nil, "redis is not connected"
+    end
+
+    -- If we're given params, close the redis connection directly
+    if keepalive_timeout or keepalive_poolsize then
+        return redis:set_keepalive(
+            keepalive_timeout,
+            keepalive_poolsize
+        )
+    elseif self.redis_connector then
+        -- Use redis connector keepalive params (or defaults)
+        return self.redis_connector:set_keepalive(redis)
+    else
+        -- Just use system defaults
+        return redis:set_keepalive()
+    end
 end
+_M.set_keepalive = set_keepalive
+_events.set_keepalive = set_keepalive
+_M.redis_close = set_keepalive  -- maintain backwards compatability
 
 
 function _M.generate_jid(self)

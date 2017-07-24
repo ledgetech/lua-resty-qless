@@ -149,6 +149,10 @@ location = /1 {
         assert(qless and not err,
             "callback should be used")
 
+        local ok, err = qless:set_keepalive()
+        assert(ok and not err,
+            "connection should be added to the keepalive pool without error")
+
         -- direct already established client should overrid callback
         params.redis_client = require("resty.redis.connector").new({
             port = redis_params.port
@@ -157,6 +161,34 @@ location = /1 {
         local qless, err = require("resty.qless").new(params)
         assert(qless and not err,
             "existing client should be used")
+
+        local ok, err = qless:set_keepalive()
+        assert(ok and not err,
+            "connection should be added to the keepalive pool without error")
+
+
+        -- use redis connector to create new connection
+        params = {
+            port = redis_params.port
+        }
+
+        local qless, err = require("resty.qless").new(params)
+        assert(qless and not err,
+            "a new connection should be made")
+
+        local ok, err = qless:set_keepalive()
+        assert(ok and not err,
+            "connection should be added to the keepalive pool without error")
+
+
+        local qless, err = require("resty.qless").new(params)
+        assert(qless and not err,
+            "a new connection should be made")
+
+        -- manual keepalive config
+        local ok, err = qless:set_keepalive(30000, 100)
+        assert(ok and not err,
+            "connection should be added to the keepalive pool without error")
 
     }
 }
@@ -167,4 +199,3 @@ using connection callback
 --- no_error_log
 [error]
 [warn]
---- ONLY
