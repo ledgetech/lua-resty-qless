@@ -59,6 +59,10 @@ location = /1 {
             }):connect()
         end
 
+        function broken_get_redis_client()
+            return nil, "error connecting to redis"
+        end
+
         local qless = require("resty.qless")
 
         local q = assert(qless.new({ redis_client = get_redis_client() }),
@@ -68,6 +72,10 @@ location = /1 {
         local q = assert(qless.new({ get_redis_client = get_redis_client }),
             "qless.new with get_redis_client should return positively")
         ngx.say(cjson.encode(q.queues:counts()))
+
+        local q, err = qless.new({ get_redis_client = broken_get_redis_client })
+        assert(not q and err == "error connecting to redis",
+            "qless.new should fail with bad_get_redis_client")
     }
 }
 --- request
@@ -78,6 +86,7 @@ GET /1
 --- no_error_log
 [error]
 [warn]
+--- ONLY
 
 
 === TEST 3: Set / get / clear config.

@@ -199,9 +199,14 @@ local _events_mt = { __index = _events }
 
 function _events.new(params)
     -- First try to pull an existing connection from the params
-    local redis = get_existing_redis_connection(params)
+    local redis, err = get_existing_redis_connection(params)
+    if not redis and err then
+        -- err indicates we were given an existing connection / callback, but
+        -- it failed
+        return nil, err
+    end
 
-    -- If not, use redis connector to create one
+    -- If not, use redis connector to create one from params
     local rc
     if not redis then
         local err
@@ -253,9 +258,14 @@ local mt = { __index = _M }
 
 function _M.new(params)
     -- First try to pull an existing connection from the params
-    local redis = get_existing_redis_connection(params)
+    local redis, err = get_existing_redis_connection(params)
+    if not redis and err then
+        -- err indicates we were given an existing connection / callback, but
+        -- it failed
+        return nil, err
+    end
 
-    -- If not, use redis connector to create one
+    -- If not, use redis connector to create one from params
     local rc
     if not redis then
         local err
