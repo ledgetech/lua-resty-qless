@@ -86,7 +86,6 @@ GET /1
 --- no_error_log
 [error]
 [warn]
---- ONLY
 
 
 === TEST 3: Set / get / clear config.
