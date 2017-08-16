@@ -21,7 +21,7 @@ Requirements
 
 * Redis >= 2.8.x
 * OpenResty >= 1.9.x
-* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.04
+* [lua-resty-redis-connector](https://github.com/pintsized/lua-resty-redis-connector) >= 0.05
 
 
 Philosophy and Nomenclature
@@ -62,8 +62,7 @@ Features
 1. __Retry logic__ Every job has a number of retries associated with it, which are
   renewed when it is put into a new queue or completed. If a job is repeatedly
   dropped, then it is presumed to be problematic, and is automatically failed.
-1. __Web App__ The [Ruby binding](https://github.com/seomoz/qless) has a Sinatra-based web
-  app that gives you control over certain operational issues
+1. __Web App__ [lua-resty-qless-web](https://github.com/hamishforbes/lua-resty-qless-web) gives you visibility and control over certain operational issues
 1. __Scheduled Work__ Until a job waits for a specified delay (defaults to 0),
   jobs cannot be popped by workers
 1. __Recurring Jobs__ Scheduling's all well and good, but we also support
