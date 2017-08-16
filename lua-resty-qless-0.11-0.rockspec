@@ -1,8 +1,8 @@
 package = "lua-resty-qless"
-version = "0.10-0"
+version = "0.11-0"
 source  = {
   url = "git://github.com/pintsized/lua-resty-qless",
-  tag = "v0.10"
+  tag = "v0.11"
 }
 description = {
   summary    = "Lua binding to Qless (Queue / Pipeline management) for OpenResty",
@@ -26,7 +26,7 @@ description = {
 
 dependencies = {
   "lua >= 5.1",
-  "lua-resty-redis-connector >= 0.04",
+  "lua-resty-redis-connector >= 0.05",
 }
 
 local modules = {
