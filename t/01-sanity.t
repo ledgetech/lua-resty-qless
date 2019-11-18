@@ -52,14 +52,14 @@ GET /1
 --- config
 location = /1 {
     content_by_lua_block {
-        function get_redis_client()
+        local function get_redis_client()
             return require("resty.redis.connector").new({
                 port = redis_params.port,
                 db = redis_params.db
             }):connect()
         end
 
-        function broken_get_redis_client()
+        local function broken_get_redis_client()
             return nil, "error connecting to redis"
         end
 
@@ -143,14 +143,14 @@ location = /1 {
         assert(not qless and err == "connection refused",
             "connection should be refused")
 
-        function get_connection()
+        local function get_connection()
             ngx.say("using connection callback")
             return require("resty.redis.connector").new({
                 port = redis_params.port
             }):connect()
         end
 
-        function close_connection(redis)
+        local function close_connection(redis)
             ngx.say("using close connection callback")
             return redis:set_keepalive()
         end
