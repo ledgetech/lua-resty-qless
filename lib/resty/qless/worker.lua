@@ -30,6 +30,9 @@ local DEFAULT_OPTIONS = {
 }
 
 
+---new
+---@param params resty.qless.worker.options
+---@return resty.qless.worker
 function _M.new(params)
     return setmetatable({
         params = params,

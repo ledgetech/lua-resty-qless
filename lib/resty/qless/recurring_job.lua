@@ -33,6 +33,10 @@ local mt = {
 }
 
 
+---new
+---@param client table
+---@param atts resty.qless.job.recur_optoins
+---@return resty.qless.job
 function _M.new(client, atts)
     return setmetatable({
         client = client,
