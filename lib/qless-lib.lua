@@ -33,7 +33,7 @@ QlessRecurringJob.__index = QlessRecurringJob
 Qless.config = {}
 
 -- Extend a table. This comes up quite frequently
-function table.extend(self, other)
+local function tbl_extend(self, other)
   for i, v in ipairs(other) do
     table.insert(self, v)
   end
@@ -1522,7 +1522,7 @@ function QlessQueue:peek(now, count)
 
   -- With these in place, we can expand this list of jids based on the work
   -- queue itself and the priorities therein
-  table.extend(jids, self.work.peek(count - #jids))
+  tbl_extend(jids, self.work.peek(count - #jids))
 
   return jids
 end
@@ -1597,7 +1597,7 @@ function QlessQueue:pop(now, worker, count)
 
   -- With these in place, we can expand this list of jids based on the work
   -- queue itself and the priorities therein
-  table.extend(jids, self.work.peek(count - #jids))
+  tbl_extend(jids, self.work.peek(count - #jids))
 
   local state
   for index, jid in ipairs(jids) do
