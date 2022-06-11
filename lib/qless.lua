@@ -24,7 +24,7 @@ QlessRecurringJob.__index = QlessRecurringJob
 
 Qless.config = {}
 
-function table.extend(self, other)
+local function tbl_extend(self, other)
   for i, v in ipairs(other) do
     table.insert(self, v)
   end
@@ -1118,7 +1118,7 @@ function QlessQueue:peek(now, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(count - #jids))
+  tbl_extend(jids, self.work.peek(count - #jids))
 
   return jids
 end
@@ -1167,7 +1167,7 @@ function QlessQueue:pop(now, worker, count)
 
   self:check_scheduled(now, count - #jids)
 
-  table.extend(jids, self.work.peek(count - #jids))
+  tbl_extend(jids, self.work.peek(count - #jids))
 
   local state
   for index, jid in ipairs(jids) do
