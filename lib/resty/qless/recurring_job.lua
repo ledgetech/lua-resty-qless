@@ -10,7 +10,7 @@ local cjson_decode = cjson.decode
 
 
 local _M = {
-    _VERSION = '0.11',
+    _VERSION = '0.12',
 }
 
 local mt = {
