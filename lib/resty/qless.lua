@@ -256,6 +256,9 @@ local _M = {
 local mt = { __index = _M }
 
 
+---new
+---@param params table<string, string>|fun() @ redis configures or closure return redis instance
+---@return resty.qless
 function _M.new(params)
     -- First try to pull an existing connection from the params
     local redis, err = get_existing_redis_connection(params)

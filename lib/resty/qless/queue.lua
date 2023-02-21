@@ -73,6 +73,10 @@ local mt = {
 }
 
 
+---new
+---@param name string
+---@param client table
+---@return resty.qless.queue
 function _M.new(name, client)
     local self = setmetatable({
         name = name,
